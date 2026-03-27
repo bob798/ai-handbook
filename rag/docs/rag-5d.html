@@ -413,7 +413,7 @@ td strong { color: #1a1a18; }
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-node">
-      <div class="fn-title">向量库</div>
+      <div class="fn-title"><span class="concept" onclick="openConcept('vectordb')">向量库</span></div>
       <div class="fn-sub">Vector DB<br>存储+检索</div>
     </div>
     <div class="flow-arrow">↓ 用户提问时</div>
@@ -1736,6 +1736,18 @@ const CONCEPTS = {
       { label: '实用对照表', body: '256 token  ≈ 170 汉字  ≈ 约一段正文\n512 token  ≈ 340 汉字  ≈ 约半页 A4\n1024 token ≈ 680 汉字  ≈ 约一整页 A4\n4096 token ≈ 2700 汉字 ≈ 约5页 A4', type: 'code' },
       { label: '精确计算（开发时使用）', body: 'pip install tiktoken\n\nimport tiktoken\nenc = tiktoken.encoding_for_model("gpt-4")\ntext = "你的中文内容"\ntokens = enc.encode(text)\nprint(f"{len(text)}汉字 = {len(tokens)} tokens")', type: 'code' },
       { label: '对 Chunk 设计的建议', body: '中文文档建议用字符数而非 token 数定义 Chunk 大小（如「每块200-300汉字」），避免 tokenizer 差异导致的不一致。精确场景用 tiktoken 实时计算。', type: 'methodology' }
+    ]
+  },
+  vectordb: {
+    title: 'Vector DB · 向量数据库',
+    sections: [
+      { label: '定义', body: '专门用于存储和检索向量（Embedding）的数据库，支持高效的近似最近邻（ANN）搜索。RAG 系统的"记忆中枢"——Embedding 存进去，检索时按语义相似度取出来。' },
+      { label: '为什么不用普通数据库', body: 'MySQL / MongoDB 做向量相似度查询需要全表扫描：100万条记录 = 100万次计算，O(n) 线性复杂度，毫秒级查询做不到。\n\n向量库用 HNSW / IVF 等近似索引算法，O(log n) 级别，千万级向量仍能在 10ms 内返回结果。', type: 'warn' },
+      { label: '类比', body: '普通数据库是「按精确地址找人」；向量库是「找住在这附近、和你最像的人」。前者精确匹配，后者相似搜索——解决的是完全不同的问题。', type: 'analogy' },
+      { label: '主流产品对比', body: 'Chroma     │ 轻量，零配置，纯 Python，适合本地 Demo\nQdrant     │ Rust 编写，性能强，内置混合检索，推荐自建\nMilvus     │ 重量级开源，支持分布式，适合大规模生产\nWeaviate   │ 内置混合搜索，GraphQL API，云端友好\nPinecone   │ 全托管云服务，零运维，按用量付费\npgvector   │ PostgreSQL 插件，已有 PG 环境直接用', type: 'code' },
+      { label: '选型策略', body: '学习 / Demo 阶段  → Chroma（pip install，零配置）\n生产自建（中小规模）→ Qdrant（性能好，部署简单）\n生产自建（大规模）→ Milvus（分布式，成熟生态）\n已有 PostgreSQL   → pgvector（无需引入新组件）\n不想运维          → Pinecone（全托管，最快上线）', type: 'good' },
+      { label: '核心能力对照', body: '混合检索（向量+BM25）：Qdrant ✓  Weaviate ✓  Milvus ✓  Chroma ✗\n元数据过滤：所有主流产品均支持\n持久化存储：除纯内存模式外均支持\n分布式扩展：Milvus ✓  Weaviate ✓  其余有限\n私有化部署：Chroma / Qdrant / Milvus / pgvector ✓  Pinecone ✗', type: 'code' },
+      { label: '普世方法论', body: '选型原则：先能跑通，再谈性能。Demo 用 Chroma，验证完业务逻辑再迁移到 Qdrant/Milvus。向量库本身是可替换的基础设施，不要在选型上卡太久。', type: 'methodology' }
     ]
   }
 };

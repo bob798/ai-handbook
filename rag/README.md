@@ -44,7 +44,14 @@
 | `00_配置提供商_先改这个.py` | 切换模型提供商，配置 API Key | `openai`, `numpy` |
 | `01_v1_最小RAG循环.py` | embedding + 余弦检索 + Prompt 注入 + 有无 RAG 对比 | 依赖 `00` |
 | `02_v2_文档分块策略.py` | 3 种分块策略对比实验 | 依赖 `00` |
-| `03_v3.5_黄金数据集.py` | 手标 + 合成数据集 + Recall@K + MRR 评估 | 依赖 `00` |
+| `03_v3.5_黄金数据集.py` | 7 条手标 Query + Recall@3 + MRR，建立检索基线，输出 `baseline.json` | 依赖 `00` |
+| `04_v4_embedding选型.py` | 对比同一 Provider 的不同 Embedding 模型，逐条分析差异，输出 `v4_embedding_result.json` | 依赖 `00`, `baseline.json` |
+| `05_v5_混合检索.py` | BM25（纯 Python）+ 向量 + RRF 融合，演示互补性，输出 `v5_hybrid_result.json` | 依赖 `00`, `baseline.json`, `chromadb` |
+| `06_v6_reranking.py` | Cross-encoder 两阶段精排（bge-reranker-base），召回 Top-10 → 精排 → Top-3，输出 `v6_reranking_result.json` | 依赖 `00`, `baseline.json`, `sentence-transformers` |
+| `07_v7_query变换.py` | Multi-Query + HyDE + Step-back 三种 Query 变换，输出 `v7_query_transform_result.json` | 依赖 `00`, `baseline.json` |
+| `08_v8_评估框架.py` | RAGAS 风格 4 维评估（Context Recall/Precision + Faithfulness + Answer Relevancy），含 RAGAS 集成代码，输出 `v8_eval_result.json` | 依赖 `00`, `baseline.json` |
+| `09_v9_agentic_rag.py` | Self-RAG + Agentic Retrieval + Multi-hop，基于 Tool Calling 实现，输出 `v9_agentic_result.json` | 依赖 `00` |
+| `10_v10_enterprise.py` | 语义缓存 + 请求追踪 + 多租户 Namespace + 增量索引更新，输出 `rag_traces.jsonl` | 依赖 `00`, `chromadb` |
 
 ---
 
@@ -69,7 +76,21 @@ demo/code/02_v2_文档分块策略.py
   ↓
 docs/03_工程方法论手册.html
   ↓
-demo/code/03_v3.5_黄金数据集.py
+demo/code/03_v3.5_黄金数据集.py   # → baseline.json
+  ↓
+demo/code/04_v4_embedding选型.py   # → v4_embedding_result.json
+  ↓
+demo/code/05_v5_混合检索.py        # → v5_hybrid_result.json
+  ↓
+demo/code/06_v6_reranking.py       # → v6_reranking_result.json    ★ 需要 sentence-transformers
+  ↓
+demo/code/07_v7_query变换.py       # → v7_query_transform_result.json
+  ↓
+demo/code/08_v8_评估框架.py        # → v8_eval_result.json
+  ↓
+demo/code/09_v9_agentic_rag.py     # → v9_agentic_result.json
+  ↓
+demo/code/10_v10_enterprise.py     # → rag_traces.jsonl
 ```
 
 ### 2. 做项目
@@ -101,25 +122,41 @@ docs/ai-knowledge-hub.html
 ## 快速开始
 
 ```bash
-# 1. 安装依赖
-pip install openai numpy
+# 1. 进入代码目录
+cd rag/demo/code
 
-# 2. 设置 API Key
-# 国内推荐：硅基流动（有免费额度）→ https://siliconflow.cn
-export SILICONFLOW_API_KEY="sf-xxx"
+# 2. 创建虚拟环境（需要 Python 3.12，uv 管理）
+uv venv --python 3.12
+source .venv/bin/activate          # macOS / Linux
+# .venv\Scripts\activate           # Windows
 
-# 3. 打开并修改提供商配置
-# rag/demo/code/00_配置提供商_先改这个.py
-PROVIDER = "siliconflow"   # 可选: siliconflow | zhipu | qwen | openai
+# 3. 安装依赖
+uv pip install openai numpy python-dotenv chromadb
 
-# 4. 验证连通性
-python rag/demo/code/00_配置提供商_先改这个.py
+# v6 额外依赖（首次运行会下载 bge-reranker-base 模型 ~270MB）
+uv pip install sentence-transformers
 
-# 5. 按顺序运行
-python rag/demo/code/01_v1_最小RAG循环.py
-python rag/demo/code/02_v2_文档分块策略.py
-python rag/demo/code/03_v3.5_黄金数据集.py
+# 4. 配置 API Key
+cp .env.example .env
+# 编辑 .env，填入 API Key 并设置 PROVIDER
+
+# 5. 验证连通性
+python 00_配置提供商_先改这个.py
+
+# 6. 按顺序运行
+python 01_v1_最小RAG循环.py
+python 02_v2_文档分块策略.py
+python 03_v3.5_黄金数据集.py     # 生成 baseline.json
+python 04_v4_embedding选型.py     # 生成 v4_embedding_result.json
+python 05_v5_混合检索.py          # 生成 v5_hybrid_result.json
+python 06_v6_reranking.py         # 生成 v6_reranking_result.json（首次下载模型 ~270MB）
+python 07_v7_query变换.py         # 生成 v7_query_transform_result.json
+python 08_v8_评估框架.py          # 生成 v8_eval_result.json
+python 09_v9_agentic_rag.py       # 生成 v9_agentic_result.json
+python 10_v10_enterprise.py       # 生成 rag_traces.jsonl
 ```
+
+> **Python 版本说明**：需要 Python 3.12。`chromadb` 依赖的 `onnxruntime` 暂不支持 Python 3.13，请勿使用系统默认的 Python 3.13。
 
 如果你只是看文档，不需要先跑代码；如果你只是查术语，也不需要先通读路线图。
 

@@ -5,15 +5,14 @@
 修改提供商：编辑 00_配置提供商_先改这个.py 中的 PROVIDER 变量
 
 快速启动：
-  # 硅基流动（推荐国内用户）
-  pip install openai numpy
-  export SILICONFLOW_API_KEY="sf-xxx"
-  # 编辑 00_配置提供商_先改这个.py → PROVIDER = "siliconflow"
-  python 01_v1_最小RAG循环.py
+  # 1. 安装依赖
+  pip install openai numpy python-dotenv
 
-  # OpenAI（国际用户）
-  export OPENAI_API_KEY="sk-xxx"
-  # 编辑 00_配置提供商_先改这个.py → PROVIDER = "openai"
+  # 2. 配置（复制模板并编辑）
+  cp .env.example .env
+  # 编辑 .env 文件填入 API Key 和选择提供商
+
+  # 3. 运行
   python 01_v1_最小RAG循环.py
 """
 

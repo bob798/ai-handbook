@@ -12,18 +12,25 @@
 本文件复用 v1 的 embed / retrieve / chat 函数，
 聚焦展示：分块决策 → 检索结果 → 最终回答质量的因果链
 
-依赖：pip install openai numpy
-运行：export OPENAI_API_KEY="sk-xxx" && python 02_v2_文档分块策略.py
+依赖：pip install openai numpy python-dotenv
+运行：python 02_v2_文档分块策略.py
 """
 
 import re
 import numpy as np
-from openai import OpenAI
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
 
-client = OpenAI()
+# 复用 v1 的统一接口
+_provider_path = Path(__file__).with_name("00_配置提供商_先改这个.py")
+_provider_spec = spec_from_file_location("rag_provider", _provider_path)
+if _provider_spec is None or _provider_spec.loader is None:
+    raise ImportError(f"无法加载提供商配置文件: {_provider_path}")
+_provider_module = module_from_spec(_provider_spec)
+_provider_spec.loader.exec_module(_provider_module)
 
-EMBED_MODEL = "text-embedding-3-small"
-CHAT_MODEL  = "gpt-4o-mini"
+embed = _provider_module.embed
+chat = _provider_module.chat
 
 
 # ══════════════════════════════════════════════════════════════
@@ -90,7 +97,7 @@ def chunk_fixed_with_overlap(text: str, chunk_size: int = 200, overlap: int = 40
     
     有了 overlap=40，这句话会完整出现在某个块里，因为边界前移了。
 
-    overlap 推荐值：chunk_size 的 10%~20%
+    overlap 推荐值：chunk_size 的 10%~20% ？ 为什么
     """
     text = text.strip()
     chunks = []
@@ -154,11 +161,6 @@ def chunk_by_sentence(text: str, max_chars: int = 300) -> list[str]:
 # 复用 V1 的 embedding / 检索 / 生成函数
 # ══════════════════════════════════════════════════════════════
 
-def embed(text: str) -> np.ndarray:
-    resp = client.embeddings.create(input=text, model=EMBED_MODEL)
-    return np.array(resp.data[0].embedding)
-
-
 def cosine_sim(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
 
@@ -182,12 +184,7 @@ def rag_answer(query: str, contexts: list[dict]) -> str:
 
 问题：{query}
 回答："""
-    resp = client.chat.completions.create(
-        model=CHAT_MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0,
-    )
-    return resp.choices[0].message.content.strip()
+    return chat(prompt, temperature=0)
 
 
 # ══════════════════════════════════════════════════════════════

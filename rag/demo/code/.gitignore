@@ -1,0 +1,6 @@
+# Environment variables (contains API keys)
+.env
+.obsidian
+.venv
+__pycache__
+settings.local.json
