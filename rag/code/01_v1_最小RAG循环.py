@@ -77,7 +77,8 @@ def build_prompt(query: str, contexts: list[dict]) -> str:
 def main():
     info = model_info()
     print(f"\n{'═'*60}")
-    print(f" 当前提供商: {info['provider']}  |  Embedding: {info['embed_model']}")
+    print(f" v1 ／ 最小RAG循环")
+    print(f" Provider: {info['provider']}  |  Embed: {info['embed_model']}")
     print(f"{'═'*60}")
 
     # STEP 1: 为知识库建立 Embedding 索引

@@ -238,6 +238,9 @@ def main():
     print(f"{'═'*60}")
 
     # ── STEP 1：加载基线 ─────────────────────────────────────
+    print(f"\n{'═'*60}")
+    print(" STEP 1 ／ 加载基线")
+    print(f"{'═'*60}")
     baseline_path = Path(__file__).parent / "baseline.json"
     if not baseline_path.exists():
         print("  ⚠️  未找到 baseline.json，请先运行 03_v3.5_检索基线.py")

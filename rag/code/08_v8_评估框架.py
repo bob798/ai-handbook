@@ -366,6 +366,9 @@ def main():
     print(f"\n  检索基线 Recall@3={baseline['recall_at_3']}  MRR={baseline['mrr']}")
 
     # ── STEP 2：建立检索索引 ─────────────────────────────────
+    print(f"\n{'═'*60}")
+    print(" STEP 2 ／ 建立检索索引")
+    print(f"{'═'*60}")
     print(f"\n  建立检索索引...")
     chunks = chunk_by_sentence(DOCUMENT, max_chars=300)
     chunk_embs = np.array([embed(c) for c in chunks])

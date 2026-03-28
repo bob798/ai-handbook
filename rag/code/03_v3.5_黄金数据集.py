@@ -46,8 +46,9 @@ if _provider_spec is None or _provider_spec.loader is None:
 _provider_module = module_from_spec(_provider_spec)
 _provider_spec.loader.exec_module(_provider_module)
 
-embed = _provider_module.embed
+embed      = _provider_module.embed
 cosine_sim = _provider_module.cosine_sim
+model_info = _provider_module.model_info
 
 
 # ══════════════════════════════════════════════════════════════
@@ -184,8 +185,10 @@ def mrr(retrieved: list[str], relevant_text: str) -> float:
 # ══════════════════════════════════════════════════════════════
 
 def main():
+    info = model_info()
     print(f"\n{'═'*60}")
-    print(" v3.5 ／ 建立检索基线")
+    print(f" v3.5 ／ 建立检索基线")
+    print(f" Provider: {info['provider']}  |  Embed: {info['embed_model']}")
     print(f"{'═'*60}")
 
     # ── STEP 1：分块 + 建索引 ──────────────────────────────

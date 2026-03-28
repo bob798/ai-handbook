@@ -226,10 +226,10 @@ def main():
     LINE = "─" * 62
     info = model_info()
 
-    print(f"\n{'═'*62}")
-    print(f" V3 · 向量数据库持久化")
-    print(f" 提供商: {info['provider']}  |  Embedding: {info['embed_model']}")
-    print(f"{'═'*62}")
+    print(f"\n{'═'*60}")
+    print(f" v3 ／ 向量数据库持久化")
+    print(f" Provider: {info['provider']}  |  Embed: {info['embed_model']}")
+    print(f"{'═'*60}")
 
     collection = get_collection(DB_PATH, COLLECTION_NAME)
     existing_count = collection.count()
@@ -238,9 +238,9 @@ def main():
     # STEP 1: 判断是否需要入库
     # 关键体验：第二次运行直接跳过入库，不重算 embedding
     # ────────────────────────────────────────────────────────
-    print(f"\n{'═'*62}")
+    print(f"\n{'═'*60}")
     print(" STEP 1 ／ 检查知识库状态")
-    print(f"{'═'*62}")
+    print(f"{'═'*60}")
     print(f"\n  数据库路径: {DB_PATH}")
     print(f"  Collection:  {COLLECTION_NAME}")
     print(f"  当前 chunk 数: {existing_count}")
@@ -276,9 +276,9 @@ def main():
     # STEP 2: 基础语义检索（全库）
     # 和 v1/v2 对比：现在检索的是持久化的向量库，不是内存数组
     # ────────────────────────────────────────────────────────
-    print(f"\n{'═'*62}")
+    print(f"\n{'═'*60}")
     print(" STEP 2 ／ 基础检索（全库）")
-    print(f"{'═'*62}")
+    print(f"{'═'*60}")
 
     QUERY_1 = "HNSW 是什么，为什么向量检索这么快"
 
@@ -299,9 +299,9 @@ def main():
     # STEP 3: Metadata 过滤检索（核心新能力）
     # 场景：企业多部门知识库，不同角色只看自己权限范围内的内容
     # ────────────────────────────────────────────────────────
-    print(f"\n{'═'*62}")
+    print(f"\n{'═'*60}")
     print(" STEP 3 ／ Metadata 过滤检索（企业级核心能力）")
-    print(f"{'═'*62}")
+    print(f"{'═'*60}")
 
     QUERY_2 = "多租户和权限隔离怎么做"
 
@@ -347,9 +347,9 @@ def main():
     # STEP 4: 增量入库（upsert 演示）
     # 场景：产品手册更新了新章节，只需要入库新内容
     # ────────────────────────────────────────────────────────
-    print(f"\n{'═'*62}")
+    print(f"\n{'═'*60}")
     print(" STEP 4 ／ 增量入库：新文档只算新 embedding")
-    print(f"{'═'*62}")
+    print(f"{'═'*60}")
 
     # 模拟"新增一篇竞品分析文档"
     NEW_DOC = {
@@ -396,9 +396,9 @@ def main():
     # ────────────────────────────────────────────────────────
     # STEP 5: RAG 完整回答（把 v1 的 Prompt 注入接上来）
     # ────────────────────────────────────────────────────────
-    print(f"\n{'═'*62}")
+    print(f"\n{'═'*60}")
     print(" STEP 5 ／ 完整 RAG 回答（检索 + 生成）")
-    print(f"{'═'*62}")
+    print(f"{'═'*60}")
 
     QUERY_FINAL = "企业部署 RAG 知识库，向量数据库该怎么选型？"
     print(f"\n  问题: {QUERY_FINAL}\n")
@@ -428,9 +428,9 @@ def main():
     # ────────────────────────────────────────────────────────
     # 总结
     # ────────────────────────────────────────────────────────
-    print(f"\n{'═'*62}")
+    print(f"\n{'═'*60}")
     print(" V3 总结")
-    print(f"{'═'*62}")
+    print(f"{'═'*60}")
     print(f"""
   你现在理解的概念：
     ✓ Collection：向量库的命名空间，隔离不同知识库

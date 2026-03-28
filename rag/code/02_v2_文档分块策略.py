@@ -39,8 +39,9 @@ if _provider_spec is None or _provider_spec.loader is None:
 _provider_module = module_from_spec(_provider_spec)
 _provider_spec.loader.exec_module(_provider_module)
 
-embed = _provider_module.embed
-chat = _provider_module.chat
+embed      = _provider_module.embed
+chat       = _provider_module.chat
+model_info = _provider_module.model_info
 
 
 # ══════════════════════════════════════════════════════════════
@@ -215,6 +216,11 @@ def print_chunks_preview(name: str, chunks: list[str]):
 
 def main():
     LINE = "─" * 60
+    info = model_info()
+    print(f"\n{'═'*60}")
+    print(f" v2 ／ 文档分块策略")
+    print(f" Provider: {info['provider']}  |  Embed: {info['embed_model']}")
+    print(f"{'═'*60}")
 
     # ────────────────────────────────────────────────────────
     # 实验 0：展示三种分块策略的分块结果
