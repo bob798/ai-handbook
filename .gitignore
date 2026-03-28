@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Editor
+.obsidian/
+.idea/
+.vscode/
+
+# Environment
+.env
+settings.local.json
