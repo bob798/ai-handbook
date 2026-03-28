@@ -37,7 +37,7 @@
 | `rag-5d.html` | 横向辨析，只负责对比、场景判断、讲解表达、面试复习 | 要讲清楚 RAG 或做面试准备时打开 |
 | `knowledge-updates.html` | 更新日志，只负责记录知识库结构和内容变更 | 想看最近做了什么调整时打开 |
 
-### `demo/code/`：可运行代码
+### `code/`：可运行代码
 
 | 文件 | 内容 | 依赖 |
 |------|------|------|
@@ -68,29 +68,29 @@ docs/01_概念手册_向量与检索.html
   ↓
 docs/02_代码讲解_V1V2.html#v1
   ↓
-demo/code/01_v1_最小RAG循环.py
+code/01_v1_最小RAG循环.py
   ↓
 docs/02_代码讲解_V1V2.html#v2
   ↓
-demo/code/02_v2_文档分块策略.py
+code/02_v2_文档分块策略.py
   ↓
 docs/03_工程方法论手册.html
   ↓
-demo/code/03_v3.5_黄金数据集.py   # → baseline.json
+code/03_v3.5_黄金数据集.py   # → baseline.json
   ↓
-demo/code/04_v4_embedding选型.py   # → v4_embedding_result.json
+code/04_v4_embedding选型.py   # → v4_embedding_result.json
   ↓
-demo/code/05_v5_混合检索.py        # → v5_hybrid_result.json
+code/05_v5_混合检索.py        # → v5_hybrid_result.json
   ↓
-demo/code/06_v6_reranking.py       # → v6_reranking_result.json    ★ 需要 sentence-transformers
+code/06_v6_reranking.py       # → v6_reranking_result.json    ★ 需要 sentence-transformers
   ↓
-demo/code/07_v7_query变换.py       # → v7_query_transform_result.json
+code/07_v7_query变换.py       # → v7_query_transform_result.json
   ↓
-demo/code/08_v8_评估框架.py        # → v8_eval_result.json
+code/08_v8_评估框架.py        # → v8_eval_result.json
   ↓
-demo/code/09_v9_agentic_rag.py     # → v9_agentic_result.json
+code/09_v9_agentic_rag.py     # → v9_agentic_result.json
   ↓
-demo/code/10_v10_enterprise.py     # → rag_traces.jsonl
+code/10_v10_enterprise.py     # → rag_traces.jsonl
 ```
 
 ### 2. 做项目
@@ -123,7 +123,7 @@ docs/ai-knowledge-hub.html
 
 ```bash
 # 1. 进入代码目录
-cd rag/demo/code
+cd rag/code
 
 # 2. 创建虚拟环境（需要 Python 3.12，uv 管理）
 uv venv --python 3.12

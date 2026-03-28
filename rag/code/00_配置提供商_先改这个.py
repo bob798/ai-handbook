@@ -49,7 +49,7 @@ except ImportError:
 
 # ═══════════════════════════════════════════════════
 # ★ 配置已移至 .env 文件 ★
-# 请编辑 rag/demo/code/.env 文件修改以下配置：
+# 请编辑 rag/code/.env 文件修改以下配置：
 #   - PROVIDER: "siliconflow" | "zhipu" | "qwen" | "openai"
 #   - 对应的 API Key 环境变量
 #   - 可选：EMBED_MODEL 和 CHAT_MODEL 自定义模型
@@ -132,7 +132,7 @@ def _build_client() -> "OpenAI":
     if not api_key:
         raise EnvironmentError(
             f"\n[错误] 未找到 API Key 环境变量: {cfg['api_key_env']}\n"
-            f"请编辑 rag/demo/code/.env 文件配置你的 API Key\n"
+            f"请编辑 rag/code/.env 文件配置你的 API Key\n"
             f"申请地址见 .env 文件中 {PROVIDER} 的注释"
         )
     if cfg["sdk"] == "openai_compat":
@@ -154,7 +154,7 @@ def _build_client() -> "OpenAI":
                 f"\n[错误] 未安装 zhipuai 包\n"
                 f"请运行: pip install zhipuai\n"
                 f"或者切换到其他提供商（siliconflow | qwen | openai）\n"
-                f"修改 rag/demo/code/.env 文件中的 PROVIDER 配置"
+                f"修改 rag/code/.env 文件中的 PROVIDER 配置"
             )
         return ZhipuAI(api_key=api_key)
     else:
