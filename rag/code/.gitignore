@@ -8,6 +8,9 @@ settings.local.json
 # ChromaDB 知识库（本地生成，运行脚本后自动创建）
 interview_kb/
 
+# 面试日志（本地生成）
+logs/
+
 # Generated result files (re-created by running the scripts)
 *_result.json
 rag_traces.jsonl

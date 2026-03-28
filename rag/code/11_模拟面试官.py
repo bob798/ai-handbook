@@ -6,9 +6,9 @@
 后续运行：直接加载已有知识库 → 开始面试
 
 面试官能力：
-  - 检索 ai-handbook 知识库出题（RAG / MCP / Agent）
+  - 从 interview_qa.json 有序出题（RAG / MCP / Agent）
   - 根据候选人回答追问，调用知识库核实答案
-  - 每 5 轮给出阶段性评分（满分 10 分）和改进建议
+  - 每轮独立评估：对照 key_points 打分，写入 logs/ JSONL
   - 全程保留对话历史，面试官记得每一轮的问答
 
 依赖：pip install chromadb openai numpy python-dotenv
@@ -24,7 +24,9 @@
 # ║    不推荐：zhipu（Tool Calling 接口与 OpenAI 有差异）         ║
 # ╚══════════════════════════════════════════════════════════════╝
 
+import datetime
 import json
+import random
 import re
 from html.parser import HTMLParser
 from importlib.util import module_from_spec, spec_from_file_location
@@ -288,21 +290,19 @@ SEARCH_TOOL_DEF = {
 
 INTERVIEWER_SYSTEM_PROMPT = """\
 你是一位资深 AI 工程师面试官，专门考察 RAG、MCP、Agent 方向的技术深度。
-候选人的学习资料来自 ai-handbook，你通过 search_kb 工具检索这些内容来出题和核实答案。
+候选人的学习资料来自 ai-handbook，你通过 search_kb 工具检索这些内容来核实答案和追问。
 
 【行为规则】
-1. 每轮只问一个问题，等候选人回答后再追问或出下一题
-2. 候选人回答后，调用 search_kb 检索知识库核实，再给出评价和追问
+1. 每轮只问一个问题，等候选人回答后再评价或追问
+2. 候选人回答后，调用 search_kb 检索知识库核实，再给出简要评价
 3. 发现候选人错误认知时，直接指出并引用知识库中的正确说法
-4. 每满 5 轮给一次阶段性评分（满分 10 分）和 1-2 条改进建议
-5. 优先考察顺序：原理理解 > 工程实践 > 边界场景 > 陷阱识别
+4. 评价要简短（1-2 句），重点说对了什么、漏了什么，然后直接问下一题
+5. 优先考察：原理理解 > 工程实践 > 边界场景
 
-【考察方向（轮流覆盖）】
-- RAG：向量检索原理、分块策略、混合检索 RRF、Reranking、评估指标（Recall/MRR/RAGAS）、Agentic RAG
-- MCP：协议原理、Tool/Resource/Prompt 三类能力、与 Function Calling 的关系、常见误解
-- Agent：规划与推理、工具调用循环、多步任务、模型选型
-
-【开场】从知识库中选一道中等难度的 RAG 基础题开始面试。\
+【题目指令】
+当你收到以 "[下一题]" 开头的消息时，这是题目切换指令。
+你需要：先简评上一题回答（如有），然后用自然的面试官语气提问 [下一题] 后的题目内容。
+不要原样复读题目，用自己的语气问出来。\
 """
 
 
@@ -364,6 +364,128 @@ def interview_turn(user_content: str, messages: list) -> tuple[str, list]:
 
 
 # ══════════════════════════════════════════════════════════════
+# QA 数据集：加载、评估、记录
+# ══════════════════════════════════════════════════════════════
+
+QA_PATH = Path(__file__).parent / "interview_qa.json"
+LOG_DIR  = Path(__file__).parent / "logs"
+
+
+def load_qa_dataset(shuffle: bool = True) -> list[dict]:
+    """加载 interview_qa.json，可选随机打乱顺序"""
+    if not QA_PATH.exists():
+        print(f"  ⚠  未找到 {QA_PATH.name}，面试官将自主从知识库选题")
+        return []
+    with open(QA_PATH, encoding="utf-8") as f:
+        qa_list = json.load(f)
+    if shuffle:
+        random.shuffle(qa_list)
+    print(f"  → 题库加载完成（{len(qa_list)} 道题）")
+    return qa_list
+
+
+def evaluate_answer(qa: dict, user_answer: str) -> dict:
+    """
+    独立 LLM 调用，对照 qa.key_points 评估用户回答。
+    不加入面试对话历史，不影响面试官上下文。
+    返回: {score, max_score, key_points_hit, key_points_missed, feedback}
+    """
+    key_points_str = "\n".join(f"- {kp}" for kp in qa["key_points"])
+    prompt = f"""你是一位严格的面试评估员，根据评分要点对候选人回答打分。
+
+面试题：{qa['question']}
+
+参考答案：{qa['reference_answer']}
+
+评分要点（每项 1 分，共 {len(qa['key_points'])} 分）：
+{key_points_str}
+
+候选人回答：{user_answer}
+
+请评估，以 JSON 格式返回（只返回 JSON，不要其他文字）：
+{{
+  "key_points_hit": ["命中的要点（原文）"],
+  "key_points_missed": ["遗漏的要点（原文）"],
+  "score": <命中要点数>,
+  "max_score": {len(qa['key_points'])},
+  "feedback": "简短点评（1-2 句中文，说明对了什么、漏了什么）"
+}}"""
+
+    resp = _client.chat.completions.create(
+        model=_cfg["chat_model"],
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0,
+    )
+    content = (resp.choices[0].message.content or "").strip()
+
+    # 提取 JSON（可能被 ``` 包裹）
+    if "```" in content:
+        parts = content.split("```")
+        content = parts[1].lstrip("json").strip() if len(parts) > 1 else content
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        return {
+            "score":             0,
+            "max_score":         len(qa["key_points"]),
+            "key_points_hit":    [],
+            "key_points_missed": qa["key_points"],
+            "feedback":          content[:200],
+        }
+
+
+def record_turn(
+    turn: int,
+    qa: dict,
+    user_answer: str,
+    eval_result: dict,
+    log_path: Path,
+) -> dict:
+    """将一轮面试记录追加到 JSONL 日志文件"""
+    record = {
+        "turn":              turn,
+        "question_id":       qa["id"],
+        "topic":             qa["topic"],
+        "difficulty":        qa["difficulty"],
+        "question":          qa["question"],
+        "user_answer":       user_answer,
+        "key_points_hit":    eval_result.get("key_points_hit",    []),
+        "key_points_missed": eval_result.get("key_points_missed", []),
+        "score":             eval_result.get("score",     0),
+        "max_score":         eval_result.get("max_score", len(qa["key_points"])),
+        "feedback":          eval_result.get("feedback",  ""),
+        "reference_answer":  qa["reference_answer"],
+    }
+    with open(log_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    return record
+
+
+def print_session_summary(records: list[dict], log_path: Path) -> None:
+    """Ctrl+C 时输出本次面试汇总"""
+    if not records:
+        return
+    total_score = sum(r["score"]     for r in records)
+    total_max   = sum(r["max_score"] for r in records)
+    pct = round(total_score / total_max * 100) if total_max else 0
+
+    print(f"\n{'═'*60}")
+    print(f" 本次面试汇总（共 {len(records)} 题）")
+    print(f"{'═'*60}")
+    print(f" 总得分：{total_score} / {total_max}  （{pct}%）\n")
+
+    for r in records:
+        bar = "█" * r["score"] + "░" * (r["max_score"] - r["score"])
+        print(f"  [{r['question_id']}] {bar} {r['score']}/{r['max_score']}")
+        print(f"    Q: {r['question'][:50]}...")
+        if r["key_points_missed"]:
+            print(f"    遗漏: {', '.join(r['key_points_missed'][:2])}")
+
+    print(f"\n  详细记录已保存：{log_path}")
+    print(f"{'═'*60}\n")
+
+
+# ══════════════════════════════════════════════════════════════
 # 主流程
 # ══════════════════════════════════════════════════════════════
 
@@ -388,37 +510,77 @@ def main():
     print(f"{'═'*60}\n")
     _collection = get_or_build_kb()
 
-    # ── STEP 2：面试 ─────────────────────────────────────────
+    # ── STEP 2：题库 ─────────────────────────────────────────
     print(f"\n{'═'*60}")
-    print(" STEP 2 ／ 面试开始（Ctrl+C 退出）")
+    print(" STEP 2 ／ 题库")
+    print(f"{'═'*60}\n")
+    qa_list = load_qa_dataset(shuffle=True)
+    qa_idx  = 0
+
+    # 日志文件
+    LOG_DIR.mkdir(exist_ok=True)
+    ts       = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_path = LOG_DIR / f"interview_{ts}.jsonl"
+
+    # ── STEP 3：面试 ─────────────────────────────────────────
+    print(f"\n{'═'*60}")
+    print(" STEP 3 ／ 面试开始（Ctrl+C 退出）")
     print(f"{'═'*60}\n")
 
     # 初始化对话历史（system prompt 只加一次）
-    messages: list = [{"role": "system", "content": INTERVIEWER_SYSTEM_PROMPT}]
+    messages: list  = [{"role": "system", "content": INTERVIEWER_SYSTEM_PROMPT}]
+    session_records: list[dict] = []
 
     # 面试官出第一题
-    print("  [面试官正在从知识库准备第一题...]\n")
-    opening, messages = interview_turn(
-        "请开始面试，从知识库中选一道中等难度的 RAG 基础题。",
-        messages,
-    )
+    current_qa = qa_list[qa_idx] if qa_list else None
+    if current_qa:
+        first_directive = f"[下一题] {current_qa['question']}"
+    else:
+        first_directive = "请开始面试，从知识库中选一道中等难度的 RAG 基础题。"
+
+    print("  [面试官正在准备第一题...]\n")
+    opening, messages = interview_turn(first_directive, messages)
     print(f"面试官：{opening}\n")
 
     # 交互循环
-    turn = 1
+    turn = 0
     try:
         while True:
             answer = input("你：").strip()
             if not answer:
                 continue
-            print()
-            response, messages = interview_turn(answer, messages)
-            print(f"面试官：{response}\n")
             turn += 1
+            print()
+
+            # ── 独立评估（不影响面试对话上下文）────────────
+            if current_qa:
+                eval_result = evaluate_answer(current_qa, answer)
+                record = record_turn(turn, current_qa, answer, eval_result, log_path)
+                session_records.append(record)
+                score, max_s = record["score"], record["max_score"]
+                bar = "█" * score + "░" * (max_s - score)
+                print(f"  [得分 {score}/{max_s}  {bar}]\n")
+
+            # ── 切换到下一题 ──────────────────────────────
+            qa_idx += 1
+            if qa_list:
+                if qa_idx < len(qa_list):
+                    current_qa  = qa_list[qa_idx]
+                    next_q_hint = f"\n\n[下一题] {current_qa['question']}"
+                else:
+                    current_qa  = None
+                    next_q_hint = "\n\n[所有题目已出完，请给出总体评价和建议]"
+                user_msg = answer + next_q_hint
+            else:
+                current_qa = None
+                user_msg   = answer
+
+            # ── 面试官回应（含下一题）────────────────────
+            response, messages = interview_turn(user_msg, messages)
+            print(f"面试官：{response}\n")
+
     except KeyboardInterrupt:
-        print(f"\n\n  面试结束（共 {turn} 轮）")
-        if turn >= 5:
-            print("  提示：可输入"请给我整体评分和总结"后再退出，获取最终评价。")
+        print_session_summary(session_records, log_path)
 
 
 if __name__ == "__main__":
