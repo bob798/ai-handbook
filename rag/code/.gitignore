@@ -8,3 +8,5 @@ settings.local.json
 # Generated result files (re-created by running the scripts)
 *_result.json
 rag_traces.jsonl
+test_documents.txt
+test_golden.json
