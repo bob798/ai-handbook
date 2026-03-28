@@ -10,3 +10,5 @@ settings.local.json
 rag_traces.jsonl
 test_documents.txt
 test_golden.json
+ecommerce_documents.txt
+ecommerce_golden.json
