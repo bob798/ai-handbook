@@ -64,6 +64,18 @@ model_info = _provider_module.model_info
 _cfg       = _provider_module.get_config()
 _client    = _provider_module._get_client()
 
+# ── 多模型评估配置 ──────────────────────────────────────
+# 列出用于评估的模型，多个模型互相印证，降低单一 LLM 裁判噪音。
+# 使用当前 provider 的 API，只需填写模型名即可。
+# 示例（siliconflow）：
+#   "Qwen/Qwen2.5-72B-Instruct"
+#   "Qwen/Qwen2.5-7B-Instruct"
+#   "deepseek-ai/DeepSeek-V3"
+EVAL_MODELS: list[str] = [
+    _cfg["chat_model"],          # 默认：主模型（来自 .env）
+    # "Qwen/Qwen2.5-7B-Instruct",  # 取消注释即可启用第二个评估模型
+]
+
 
 # ══════════════════════════════════════════════════════════════
 # 知识库配置
@@ -443,24 +455,13 @@ def _extract_json(content: str) -> dict | None:
         return None
 
 
-def evaluate_answer(qa: dict, user_answer: str) -> dict:
-    """
-    P0 评估方案：QAG 语义覆盖 + Prometheus CoT 推理 + 错误扣分
-
-    改进点（相比旧方案）：
-    1. 先推理再打分（Prometheus 模式）：强制 LLM 逐条分析后再出分，一致性更高
-    2. 语义等价判断（QAG 模式）：不要求原文，换个说法说对了也算命中
-    3. 错误惩罚：明显错误陈述扣分，不只看覆盖率
-    4. analysis 字段：每条要点有独立推理，可追溯
-
-    不加入面试对话历史，不影响面试官上下文。
-    """
+def _build_eval_prompt(qa: dict, user_answer: str) -> str:
+    """构造 P0 评估 prompt（QAG + CoT + 错误扣分）"""
     n = len(qa["key_points"])
     key_points_numbered = "\n".join(
         f"{i+1}. {kp}" for i, kp in enumerate(qa["key_points"])
     )
-
-    prompt = f"""你是一位严格的面试评估员。
+    return f"""你是一位严格的面试评估员。
 
 面试题：{qa['question']}
 参考答案（满分示例）：{qa['reference_answer']}
@@ -495,16 +496,22 @@ score = 命中要点数 - 错误陈述条数（最低 0，最高 {n}）
   "feedback":  "1-2句中文点评：说对了什么、关键遗漏是什么"
 }}"""
 
+
+def _evaluate_with_model(qa: dict, user_answer: str, model: str) -> dict:
+    """用指定模型评估一次，返回结果并附 model 字段"""
+    n      = len(qa["key_points"])
+    prompt = _build_eval_prompt(qa, user_answer)
+
     resp = _client.chat.completions.create(
-        model=_cfg["chat_model"],
+        model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0,
     )
     content = (resp.choices[0].message.content or "").strip()
-    result = _extract_json(content)
+    result  = _extract_json(content)
 
     if result is None:
-        return {
+        result = {
             "score":             0,
             "max_score":         n,
             "analysis":          [],
@@ -514,10 +521,40 @@ score = 命中要点数 - 错误陈述条数（最低 0，最高 {n}）
             "feedback":          content[:200],
         }
 
-    # 保证 errors 字段存在（旧格式兼容）
     result.setdefault("errors",   [])
     result.setdefault("analysis", [])
+    result["model"] = model
     return result
+
+
+def evaluate_answer_multi(qa: dict, user_answer: str) -> dict:
+    """
+    多模型评估（对应 EVAL_MODELS 列表）。
+
+    - 每个模型独立评估，互相印证，降低单一 LLM 裁判噪音
+    - 综合得分 = 各模型得分均值（四舍五入）
+    - 返回结构包含 model_evals（逐模型结果）和聚合字段
+    """
+    n           = len(qa["key_points"])
+    model_evals = [_evaluate_with_model(qa, user_answer, m) for m in EVAL_MODELS]
+
+    # 综合得分：均值，保留一位小数
+    scores    = [e["score"] for e in model_evals]
+    avg_score = round(sum(scores) / len(scores), 1)
+
+    # 主裁判：EVAL_MODELS[0] 的 key_points_hit/missed/feedback 作为主要字段
+    primary = model_evals[0]
+
+    return {
+        "score":             avg_score,
+        "max_score":         n,
+        "key_points_hit":    primary.get("key_points_hit",    []),
+        "key_points_missed": primary.get("key_points_missed", []),
+        "errors":            primary.get("errors",            []),
+        "analysis":          primary.get("analysis",          []),
+        "feedback":          primary.get("feedback",          ""),
+        "model_evals":       model_evals,
+    }
 
 
 def record_turn(
@@ -542,6 +579,7 @@ def record_turn(
         "score":             eval_result.get("score",     0),
         "max_score":         eval_result.get("max_score", len(qa["key_points"])),
         "feedback":          eval_result.get("feedback",  ""),
+        "model_evals":       eval_result.get("model_evals",       []),
         "reference_answer":  qa["reference_answer"],
     }
     with open(log_path, "a", encoding="utf-8") as f:
@@ -563,9 +601,17 @@ def print_session_summary(records: list[dict], log_path: Path) -> None:
     print(f" 总得分：{total_score} / {total_max}  （{pct}%）\n")
 
     for r in records:
-        bar = "█" * r["score"] + "░" * (r["max_score"] - r["score"])
-        print(f"  [{r['question_id']}] {bar} {r['score']}/{r['max_score']}")
+        score, max_s = r["score"], r["max_score"]
+        bar = "█" * round(score) + "░" * (max_s - round(score))
+        print(f"  [{r['question_id']}] {bar} {score}/{max_s}  {r['difficulty']}")
         print(f"    Q: {r['question'][:50]}...")
+        # 多模型各自得分（有多个模型时展示）
+        evals = r.get("model_evals", [])
+        if len(evals) > 1:
+            model_scores = "  ".join(
+                f"{e['model'].split('/')[-1]}:{e['score']}" for e in evals
+            )
+            print(f"    模型: {model_scores}")
         if r["key_points_missed"]:
             print(f"    遗漏: {', '.join(r['key_points_missed'][:2])}")
 
@@ -656,12 +702,27 @@ def main():
 
             # ── 独立评估（不影响面试对话上下文）────────────
             if current_qa:
-                eval_result = evaluate_answer(current_qa, answer)
-                record = record_turn(turn, current_qa, answer, eval_result, log_path)
+                eval_result = evaluate_answer_multi(current_qa, answer)
+                record      = record_turn(turn, current_qa, answer, eval_result, log_path)
                 session_records.append(record)
-                score, max_s = record["score"], record["max_score"]
-                bar = "█" * score + "░" * (max_s - score)
-                print(f"  [得分 {score}/{max_s}  {bar}]\n")
+
+                # 逐模型得分展示
+                evals   = eval_result.get("model_evals", [])
+                max_s   = eval_result["max_score"]
+                m_width = max((len(e["model"].split("/")[-1]) for e in evals), default=10)
+                print("  [评分]")
+                for e in evals:
+                    name = e["model"].split("/")[-1]
+                    s    = e["score"]
+                    bar  = "█" * int(s) + "░" * (max_s - int(s))
+                    err  = f"  ⚠ {len(e['errors'])}处错误" if e.get("errors") else ""
+                    print(f"  {name:<{m_width}}  {bar}  {s}/{max_s}{err}")
+                if len(evals) > 1:
+                    avg = eval_result["score"]
+                    bar = "█" * round(avg) + "░" * (max_s - round(avg))
+                    print(f"  {'─'*40}")
+                    print(f"  {'综合':<{m_width}}  {bar}  {avg}/{max_s}")
+                print()
 
             # ── 切换到下一题 ──────────────────────────────
             qa_idx += 1
