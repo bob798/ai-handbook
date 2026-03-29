@@ -36,6 +36,7 @@ try:
     from prompt_toolkit.history import InMemoryHistory
     _PT_AVAILABLE = True
 except ImportError:
+    # 降级：macOS 不 import readline（libedit 会输出乱字符），直接用 input()
     _PT_AVAILABLE = False
 
 try:
