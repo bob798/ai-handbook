@@ -11,7 +11,7 @@
   - 每轮独立评估：对照 key_points 打分，写入 logs/ JSONL
   - 全程保留对话历史，面试官记得每一轮的问答
 
-依赖：pip install chromadb openai numpy python-dotenv
+依赖：pip install chromadb openai numpy python-dotenv langchain-text-splitters
 运行：python 11_模拟面试官.py
 退出：Ctrl+C
 """
@@ -28,9 +28,13 @@ import datetime
 import json
 import random
 import re
-from html.parser import HTMLParser
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+
+try:
+    from langchain_text_splitters import HTMLHeaderTextSplitter, RecursiveCharacterTextSplitter
+except ImportError:
+    raise ImportError("请先安装：pip install langchain-text-splitters")
 
 try:
     import chromadb
@@ -61,6 +65,8 @@ _client    = _provider_module._get_client()
 HANDBOOK_ROOT   = Path(__file__).parent.parent.parent
 DB_PATH         = Path(__file__).parent / "interview_kb"
 COLLECTION_NAME = "ai_handbook"
+# 分块策略版本：改变分块方式时递增，触发自动重建知识库
+KB_VERSION      = "v2_header_split"
 
 # 明确列出高价值文件，跳过纯导航/索引页
 _EXPLICIT_SOURCES = [
@@ -92,49 +98,57 @@ KB_SOURCES = _build_kb_sources()
 
 
 # ══════════════════════════════════════════════════════════════
-# HTML 文本提取（标准库 html.parser，无需安装）
+# 文本提取与分块
 #
-# 剥离 <script> / <style> / <nav> / <button> 标签及其内容，
-# 只保留正文文本节点（长度 ≥ TEXT_MIN_LEN，过滤 UI 噪音）。
+# HTML：HTMLHeaderTextSplitter（LangChain）
+#   - 按 h1/h2/h3 切块，标题自动注入每个 chunk（保留层级上下文）
+#   - 再用 RecursiveCharacterTextSplitter 二次切割过长块
+#   - 显著优于手写 parser：标题与正文有关联，检索相关性更高
+#
+# Markdown：句子感知分块（沿用 v3 策略）
 # ══════════════════════════════════════════════════════════════
 
-TEXT_MIN_LEN = 30   # 低于此长度的文本节点视为 UI 噪音（如 tab 按钮标签）
+_HTML_SPLITTER = HTMLHeaderTextSplitter(
+    headers_to_split_on=[("h1", "h1"), ("h2", "h2"), ("h3", "h3")],
+)
+_CHAR_SPLITTER = RecursiveCharacterTextSplitter(
+    chunk_size=500,
+    chunk_overlap=50,
+    separators=["\n\n", "\n", "。", "！", "？", "；", " ", ""],
+)
 
 
-class _TextExtractor(HTMLParser):
-    _SKIP_TAGS = {"script", "style", "nav", "button", "head"}
+def chunk_html(path: Path) -> list[str]:
+    """
+    HTML → 层级感知分块。
+    每个 chunk 前缀注入面包屑标题（h1 > h2 > h3），
+    让 embedding 能感知所属章节，提升检索准确率。
+    """
+    html_text = path.read_text(encoding="utf-8", errors="replace")
+    docs = _HTML_SPLITTER.split_text(html_text)
 
-    def __init__(self):
-        super().__init__()
-        self._skip_depth = 0
-        self.parts: list[str] = []
+    chunks: list[str] = []
+    for doc in docs:
+        # 构造标题面包屑
+        breadcrumb = " > ".join(
+            v for v in [doc.metadata.get("h1"), doc.metadata.get("h2"), doc.metadata.get("h3")]
+            if v
+        )
+        content = doc.page_content.strip()
+        if not content:
+            continue
+        # 注入面包屑（面包屑不重复出现时才加）
+        enriched = f"[{breadcrumb}]\n{content}" if breadcrumb else content
 
-    def handle_starttag(self, tag, attrs):
-        if tag in self._SKIP_TAGS:
-            self._skip_depth += 1
+        # 二次切割：避免单块过长
+        sub = _CHAR_SPLITTER.split_text(enriched)
+        chunks.extend(s for s in sub if len(s) > 30)
 
-    def handle_endtag(self, tag):
-        if tag in self._SKIP_TAGS and self._skip_depth > 0:
-            self._skip_depth -= 1
-
-    def handle_data(self, data):
-        if self._skip_depth == 0:
-            text = data.strip()
-            if len(text) >= TEXT_MIN_LEN:
-                self.parts.append(text)
-
-
-def extract_html_text(path: Path) -> str:
-    extractor = _TextExtractor()
-    extractor.feed(path.read_text(encoding="utf-8", errors="replace"))
-    return "\n".join(extractor.parts)
+    return chunks
 
 
-# ══════════════════════════════════════════════════════════════
-# 分块（复用 v3 的句子感知分块策略）
-# ══════════════════════════════════════════════════════════════
-
-def chunk_by_sentence(text: str, max_chars: int = 300) -> list[str]:
+def chunk_by_sentence(text: str, max_chars: int = 500) -> list[str]:
+    """Markdown / 纯文本分块（句子感知）"""
     sentences = re.split(r'(?<=[。！？；\n])', text)
     sentences = [s.strip() for s in sentences if s.strip() and len(s) > 5]
     chunks, current = [], ""
@@ -159,32 +173,37 @@ def _get_collection():
     client = chromadb.PersistentClient(path=str(DB_PATH))
     return client.get_or_create_collection(
         name=COLLECTION_NAME,
-        metadata={"hnsw:space": "cosine"},
+        metadata={"hnsw:space": "cosine", "kb_version": KB_VERSION},
     )
 
 
 def get_or_build_kb():
     """
     首次运行：扫描 ai-handbook 文件 → 向量化 → upsert 到 ChromaDB
-    后续运行：检测到已有数据直接跳过，秒级加载
+    后续运行：版本匹配时直接加载；版本不匹配时自动重建
     """
     collection = _get_collection()
 
     if collection.count() > 0:
-        print(f"  → 知识库已就绪（{collection.count()} 个 chunks），直接加载")
-        return collection
+        stored_ver = collection.metadata.get("kb_version", "")
+        if stored_ver == KB_VERSION:
+            print(f"  → 知识库已就绪（{collection.count()} 个 chunks），直接加载")
+            return collection
+        print(f"  → 分块策略已更新（{stored_ver} → {KB_VERSION}），重建知识库...")
+        import shutil
+        shutil.rmtree(DB_PATH)
+        collection = _get_collection()
 
     print(f"  首次运行，开始构建知识库（共 {len(KB_SOURCES)} 个文件）...\n")
     total_chunks = 0
 
     for topic, path in KB_SOURCES:
-        # 提取文本
+        # HTML：层级感知分块；Markdown/纯文本：句子感知分块
         if path.suffix == ".html":
-            raw_text = extract_html_text(path)
+            chunks = chunk_html(path)
         else:
             raw_text = path.read_text(encoding="utf-8", errors="replace")
-
-        chunks = chunk_by_sentence(raw_text)
+            chunks = chunk_by_sentence(raw_text)
         if not chunks:
             print(f"  ⚠  跳过（无有效内容）: {path.name}")
             continue
@@ -299,10 +318,12 @@ INTERVIEWER_SYSTEM_PROMPT = """\
 4. 评价要简短（1-2 句），重点说对了什么、漏了什么，然后直接问下一题
 5. 优先考察：原理理解 > 工程实践 > 边界场景
 
-【题目指令】
-当你收到以 "[下一题]" 开头的消息时，这是题目切换指令。
-你需要：先简评上一题回答（如有），然后用自然的面试官语气提问 [下一题] 后的题目内容。
-不要原样复读题目，用自己的语气问出来。\
+【题目来源】
+题目来自两个渠道，均可使用：
+1. 结构化题库（[下一题] 指令）：收到 "[下一题] <题目>" 时，用自己语气提问该题目，不要原样复读
+2. 知识库检索（search_kb 工具）：收到 "[继续出题]" 时，主动调用 search_kb 检索一个知识点，基于检索结果出一道新题
+
+两种情况都要：先简评上一题回答（1-2 句），再提问新题。\
 """
 
 
@@ -563,17 +584,15 @@ def main():
 
             # ── 切换到下一题 ──────────────────────────────
             qa_idx += 1
-            if qa_list:
-                if qa_idx < len(qa_list):
-                    current_qa  = qa_list[qa_idx]
-                    next_q_hint = f"\n\n[下一题] {current_qa['question']}"
-                else:
-                    current_qa  = None
-                    next_q_hint = "\n\n[所有题目已出完，请给出总体评价和建议]"
-                user_msg = answer + next_q_hint
+            if qa_list and qa_idx < len(qa_list):
+                # QA 题库还有题：注入结构化题目
+                current_qa  = qa_list[qa_idx]
+                next_q_hint = f"\n\n[下一题] {current_qa['question']}"
             else:
-                current_qa = None
-                user_msg   = answer
+                # QA 题库耗尽：转向向量库自由出题
+                current_qa  = None
+                next_q_hint = "\n\n[继续出题] 请用 search_kb 检索一个知识点，出一道未问过的新题继续面试"
+            user_msg = answer + next_q_hint
 
             # ── 面试官回应（含下一题）────────────────────
             response, messages = interview_turn(user_msg, messages)
