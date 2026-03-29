@@ -28,6 +28,7 @@ import datetime
 import json
 import random
 import re
+import readline  # noqa: F401 — 仅 import 即可启用方向键/历史/行编辑
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
@@ -395,16 +396,31 @@ QA_PATH = Path(__file__).parent / "interview_qa.json"
 LOG_DIR  = Path(__file__).parent / "logs"
 
 
+_DIFFICULTY_ORDER = {"easy": 0, "medium": 1, "hard": 2}
+
+
 def load_qa_dataset(shuffle: bool = True) -> list[dict]:
-    """加载 interview_qa.json，可选随机打乱顺序"""
+    """
+    加载 interview_qa.json。
+    顺序：easy → medium → hard，同难度内随机打乱。
+    保证候选人从简单题热身，逐步加深难度。
+    """
     if not QA_PATH.exists():
         print(f"  ⚠  未找到 {QA_PATH.name}，面试官将自主从知识库选题")
         return []
     with open(QA_PATH, encoding="utf-8") as f:
         qa_list = json.load(f)
+
     if shuffle:
-        random.shuffle(qa_list)
-    print(f"  → 题库加载完成（{len(qa_list)} 道题）")
+        buckets: dict[str, list] = {"easy": [], "medium": [], "hard": []}
+        for q in qa_list:
+            buckets.setdefault(q["difficulty"], []).append(q)
+        for bucket in buckets.values():
+            random.shuffle(bucket)
+        qa_list = buckets["easy"] + buckets["medium"] + buckets["hard"]
+
+    diff_counts = {d: sum(1 for q in qa_list if q["difficulty"] == d) for d in _DIFFICULTY_ORDER}
+    print(f"  → 题库加载完成（{len(qa_list)} 道题）  {diff_counts}")
     return qa_list
 
 
@@ -567,10 +583,17 @@ def main():
     print(f"面试官：{opening}\n")
 
     # 交互循环
+    _ansi_escape = re.compile(r'\x1b\[[0-9;]*[A-Za-z]')
+
+    def read_answer() -> str:
+        """读取用户输入，过滤终端转义字符（方向键等产生的 ANSI 序列）"""
+        raw = input("你：")
+        return _ansi_escape.sub('', raw).strip()
+
     turn = 0
     try:
         while True:
-            answer = input("你：").strip()
+            answer = read_answer()
             if not answer:
                 continue
             turn += 1
