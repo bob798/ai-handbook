@@ -26,6 +26,8 @@ graph TD
     A[AI Handbook] --> B[MCP · 模型上下文协议]
     A --> C[Agent · AI 智能体]
     A --> D[RAG · 检索增强生成]
+    A --> AR[Agent Research · 生态拆解]
+    A --> P[AI Programming · 编程实战]
     A --> E[Prompt Engineering]
     A --> F[LLM Fundamentals]
 
@@ -35,10 +37,17 @@ graph TD
     B --> B4[面试题库 & 误解纠错]
     B --> B5[Demo：Python MCP Server]
 
+    AR --> AR1[ATDF 方法论 + 模板]
+    AR --> AR2[趋势研究 · 2026 生态]
+    AR --> AR3[Deep Dives · OMC / gstack / Letta]
+    AR --> AR4[概念 · RAG→Memory / Karpathy 路线]
+
     style A fill:#F26419,color:#fff
     style B fill:#fef0e7,color:#633806
     style C fill:#e6f1fb,color:#042c53
     style D fill:#eaf3de,color:#173404
+    style AR fill:#f0ebff,color:#4a2d8a
+    style P fill:#fff5e6,color:#854f0b
     style E fill:#faeeda,color:#412402
     style F fill:#f1efe8,color:#2c2c2a
 ```
@@ -142,6 +151,17 @@ graph TD
 ---
 
 ## 文件导航
+
+### Agent Research · 生态拆解（NEW）
+
+| 文件 | 内容 | 适合 |
+|---|---|---|
+| [ATDF 方法论](agent-research/methodology/ATDF.md) | 8 维度拆解框架 + 模板 | 想系统学习任何 AI 主题 |
+| [Agent 生态 2026](agent-research/research/agent-ecosystem-2026.md) | 协议战争 · 领域改造 · 创新空白 | 了解 Agent 全局 |
+| [OMC 拆解](agent-research/deep-dives/omc/omc-atdf.md) | 多 Agent 编排框架深度拆解 | 学 Agent 系统设计 |
+| [gstack 拆解](agent-research/deep-dives/gstack/gstack-atdf.md) | AI 编程方法论深度拆解 | 学角色 prompt 设计 |
+| [从 RAG 到 Memory](agent-research/concepts/rag-to-memory.md) | RAG 演化路线 + 商业分层 | 判断技术投入方向 |
+| [Karpathy 路线](agent-research/concepts/karpathy-route.md) | LLM OS → LLM Wiki → Software 3.0 | 理解 Memory 思想源头 |
 
 ### MCP 完整路径
 
