@@ -216,6 +216,14 @@ Claude Desktop 配置见 [demo/README.md](mcp/demo/README.md)。
 
 ---
 
+## 博客自动同步
+
+本仓库内容自动同步到 [Bob's Digital Garden](https://bob798.github.io/ai-handbook/)。
+
+- push 到 main/master 后，GitHub Actions 通过 `repository_dispatch` 触发博客重建
+- Markdown → Quartz 渲染，HTML 交互笔记 → 静态页面直接访问
+- 配置：repo secret `BLOG_DISPATCH_TOKEN`（指向 bob798-blog 的 Fine-grained PAT）
+
 ## 关于作者
 
 8年 ToB 预售 / 售前工程师（支付 & 金融科技），现在转型 AI 应用工程师，做 [AI 开发日记](https://你的主页) 系列内容。
