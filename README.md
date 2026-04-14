@@ -5,7 +5,7 @@
 > AI 应用工程师的完整学习记录。
 > 不只是文档整理——包含 **深度追问过程**、**真实误解纠错**、和**可在浏览器直接打开的交互式笔记**。
 
-**[🌐 在线交互版](https://你的用户名.github.io/ai-handbook/)** · **[AI 开发日记](https://你的主页)**
+**[🌐 在线交互版](https://bob798.github.io/ai-handbook/)** · **[AI 开发日记](https://bob798.github.io)**
 
 ---
 
@@ -195,7 +195,7 @@ graph TD
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/你的用户名/ai-handbook.git
+git clone https://github.com/bob798/ai-handbook.git
 cd ai-handbook/mcp/demo
 
 # 2. 创建虚拟环境（需要 Python 3.10+）
@@ -226,7 +226,7 @@ Claude Desktop 配置见 [demo/README.md](mcp/demo/README.md)。
 
 ## 关于作者
 
-8年 ToB 预售 / 售前工程师（支付 & 金融科技），现在转型 AI 应用工程师，做 [AI 开发日记](https://你的主页) 系列内容。
+8年 ToB 预售 / 售前工程师（支付 & 金融科技），现在转型 AI 应用工程师，做 [AI 开发日记](https://bob798.github.io) 系列内容。
 
 这个仓库是我边学边记的过程，不是整理好的教程。如果你发现错误或者有更好的理解，欢迎开 Issue。
 
