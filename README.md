@@ -1,17 +1,17 @@
 <div align="center">
 
-# 🧭 AI Handbook
+# 🧭 Learn AI Engineering
 
-### 一个 AI 工程师的"不整理"笔记本
+### *Learn AI engineering by reading someone else's mistakes.*
 
-*保留全部困惑 · 保留全部追问 · 保留全部误解 —— 比标准答案更实用*
+**AI 工程师的"不整理"笔记本 — 保留困惑 · 保留追问 · 保留误解**
 
 [![Docs](https://img.shields.io/badge/docs-52%20markdown-F26419?style=flat-square)](./content)
 [![Interactive](https://img.shields.io/badge/interactive-27%20HTML-8B5CF6?style=flat-square)](./interactive)
 [![Code](https://img.shields.io/badge/runnable-19%20Python-3572A5?style=flat-square)](./code)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](./web)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](#license)
-[![Chinese](https://img.shields.io/badge/lang-中文-red?style=flat-square)]()
+[![中文](https://img.shields.io/badge/中文-原创-EF4444?style=flat-square)]()
 
 **MCP · Agent · RAG · AI Programming · Methodology**
 
