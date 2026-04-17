@@ -1,239 +1,225 @@
-# AI Handbook · AI 工程师知识手册
+<div align="center">
 
-让知识以地图的形式呈现在你的脑中
+# 🧭 AI Handbook
 
-> AI 应用工程师的完整学习记录。
-> 不只是文档整理——包含 **深度追问过程**、**真实误解纠错**、和**可在浏览器直接打开的交互式笔记**。
+### 一个 AI 工程师的"不整理"笔记本
 
-**[🌐 在线交互版](https://bob798.github.io/ai-handbook/)** · **[AI 开发日记](https://bob798.github.io)**
+*保留全部困惑 · 保留全部追问 · 保留全部误解 —— 比标准答案更实用*
 
----
+[![Docs](https://img.shields.io/badge/docs-52%20markdown-F26419?style=flat-square)](./content)
+[![Interactive](https://img.shields.io/badge/interactive-27%20HTML-8B5CF6?style=flat-square)](./interactive)
+[![Code](https://img.shields.io/badge/runnable-19%20Python-3572A5?style=flat-square)](./code)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](./web)
+[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](#license)
+[![Chinese](https://img.shields.io/badge/lang-中文-red?style=flat-square)]()
 
-## 为什么有这个仓库
+**MCP · Agent · RAG · AI Programming · Methodology**
 
-学 AI 技术，最难的不是"找到资料"，而是"真正理解"。
+**[🌐 在线文档站](https://bob798.github.io/ai-handbook/)** · **[📖 交互笔记合集](./interactive)** · **[💻 Runnable Code](./code)** · **[📮 AI 开发日记](https://bob798.github.io)**
 
-这个仓库记录的不是整理好的知识点，而是**从困惑到清晰的完整过程**：包括我理解错的地方、追问了多少轮、以及最终怎么建立起体系化认知的。
-
-如果你也在学同样的内容，这里的误解记录可能比标准答案更有价值。
-
----
-
-## 内容地图
-
-```mermaid
-graph TD
-    A[AI Handbook] --> B[MCP · 模型上下文协议]
-    A --> C[Agent · AI 智能体]
-    A --> D[RAG · 检索增强生成]
-    A --> AR[Agent Research · 生态拆解]
-    A --> P[AI Programming · 编程实战]
-    A --> E[Prompt Engineering]
-    A --> F[LLM Fundamentals]
-
-    B --> B1[协议层原理]
-    B --> B2[三类能力 Tool/Resource/Prompt]
-    B --> B3[实战：Adapter & Gateway]
-    B --> B4[面试题库 & 误解纠错]
-    B --> B5[Demo：Python MCP Server]
-
-    AR --> AR1[ATDF 方法论 + 模板]
-    AR --> AR2[趋势研究 · 2026 生态]
-    AR --> AR3[Deep Dives · OMC / gstack / Letta]
-    AR --> AR4[概念 · RAG→Memory / Karpathy 路线]
-
-    style A fill:#F26419,color:#fff
-    style B fill:#fef0e7,color:#633806
-    style C fill:#e6f1fb,color:#042c53
-    style D fill:#eaf3de,color:#173404
-    style AR fill:#f0ebff,color:#4a2d8a
-    style P fill:#fff5e6,color:#854f0b
-    style E fill:#faeeda,color:#412402
-    style F fill:#f1efe8,color:#2c2c2a
-```
+</div>
 
 ---
 
-## MCP · 目前最完整的部分
+## 🎯 为什么看这个仓库
 
-### MCP 架构三层模型
+市面上不缺 AI 教程，但大多数是这样：
 
-```mermaid
-graph TB
-    subgraph 生态层
-        E1[N+M效应] --- E2[飞轮效应]
-        E2 --- E3[标准化价值]
-    end
+> ✅ "这里是标准答案"
+> ❌ "原作者其实也踩过坑 —— 但没写出来"
 
-    subgraph 应用层
-        A1[Agent Loop] --- A2[Tool调用]
-        A2 --- A3[多Server协作]
-    end
+**这个仓库反过来做** ——
 
-    subgraph 协议层
-        P1[Host] -->|1:N| P2[Client]
-        P2 -->|1:1| P3[Server]
-        P3 --> P4[Tools]
-        P3 --> P5[Resources]
-        P3 --> P6[Prompts]
-    end
+- 📝 **保留误解** · 每个主题都记录了"我理解错的那个版本"
+- 🔁 **保留追问** · 重要概念都经过 5+ 轮深度追问（不是 Wiki 式的概括）
+- 🧩 **保留体系** · 不是一个松散的 awesome list，是一张可导航的知识图谱
+- 🎨 **保留交互** · 27 个浏览器就能打开的交互式笔记，不是静态幻灯片
 
-    生态层 --> 应用层
-    应用层 --> 协议层
-```
+> 如果你在学同样的内容、踩过同样的坑，这里比标准答案更有参考价值。
 
-### Function Calling 完整循环
+---
 
-```mermaid
-sequenceDiagram
-    participant U as 用户
-    participant C as 你的代码
-    participant AI as AI 模型
-    participant T as 外部工具
+## 📊 内容概览
 
-    U->>C: "上海天气怎么样？"
-    C->>AI: 消息 + Tool定义
-    AI-->>C: {"tool":"get_weather","input":{"city":"上海"}}
-    Note over AI: AI 停止，等待结果
-    C->>T: 执行真实 HTTP 请求
-    T-->>C: {temp:22, weather:"晴"}
-    C->>AI: tool_result 返回数据
-    AI-->>C: "上海今天晴，22°C，适合出行。"
-    C->>U: 最终回答
-```
+| 主题 | 文档 | 交互笔记 | 可运行代码 | 进度 |
+|---|:-:|:-:|:-:|---|
+| **🔌 MCP** · 模型上下文协议 | 10 | 2 | 4 .py | 🟢 相对完整 |
+| **🤖 Agent** · 智能体与方法论 | 13 | 6 | — | 🟢 成体系 |
+| **🔍 RAG** · 检索增强生成 | 19 | 9 | 15 .py | 🟢 V1-V10 代码 |
+| **💻 AI Programming** · 工程实战 | 10 | 10 | — | 🟡 持续更新 |
+| **总计** | **52** | **27** | **19** | |
 
-> **关键认知**：AI 永远不直接执行任何操作。AI 只输出意图（JSON），你的代码负责执行。这个边界是整个 Agent 架构安全模型的基石。
+---
 
-### N×M → N+M：MCP 的核心价值
+## 🗺️ 内容地图
 
 ```mermaid
 graph LR
-    subgraph 没有MCP · 200次集成工作
-        direction TB
-        App1 --> Slack1[Slack]
-        App1 --> GitHub1[GitHub]
-        App1 --> DB1[Database]
-        App2 --> Slack2[Slack]
-        App2 --> GitHub2[GitHub]
-        App2 --> DB2[Database]
-    end
+    A[AI Handbook] --> MCP[🔌 MCP]
+    A --> AGT[🤖 Agent]
+    A --> RAG[🔍 RAG]
+    A --> PRG[💻 AI Programming]
 
-    subgraph 有MCP · 30次集成工作
-        direction TB
-        AppA --> MCP[MCP 标准层]
-        AppB --> MCP
-        MCP --> SlackS[Slack Server]
-        MCP --> GitHubS[GitHub Server]
-        MCP --> DBS[DB Server]
-    end
-```
+    MCP --> MCP1[协议层·三类能力]
+    MCP --> MCP2[FC 完整循环]
+    MCP --> MCP3[Adapter & Gateway]
+    MCP --> MCP4[面试题库+误解]
 
-> N 个 App × M 个系统 = N×M 次重复开发 → 引入 MCP 标准层后变为 N+M 次
+    AGT --> AGT1[ATDF 8维方法论]
+    AGT --> AGT2[OMC/gstack/Letta 深拆]
+    AGT --> AGT3[生态 2026 研究]
+    AGT --> AGT4[Karpathy 路线]
 
-### MCP 与 REST/gRPC 的本质区别
+    RAG --> RAG1[V1→V10 进化链]
+    RAG --> RAG2[工程方法论]
+    RAG --> RAG3[8 种失败模式]
+    RAG --> RAG4[模拟面试官]
 
-```mermaid
-graph TD
-    subgraph REST_API[REST API · 为人类开发者设计]
-        R1[POST /v1/txn/proc] --> R2[语义在文档里]
-        R2 --> R3[开发者读文档再调用]
-    end
+    PRG --> PRG1[OMC 综合指南]
+    PRG --> PRG2[Skill 自动提取]
+    PRG --> PRG3[iTerm2 实战]
 
-    subgraph MCP_Tool[MCP Tool · 为 AI 模型设计]
-        M1["description: 当用户需要...时使用<br/>何时不用: 已知ID时用get_customer<br/>副作用: 只读，不修改数据"] --> M2[语义嵌入接口定义本身]
-        M2 --> M3[AI 自主推理决定是否调用]
-    end
-
-    REST_API --"Semantically Opaque<br/>语义不透明"--> ❌
-    MCP_Tool --"Self-describing<br/>自描述"--> ✅
+    style A fill:#F26419,color:#fff,stroke:#F26419
+    style MCP fill:#fef0e7,color:#633806
+    style AGT fill:#f0ebff,color:#4a2d8a
+    style RAG fill:#eaf3de,color:#173404
+    style PRG fill:#fff5e6,color:#854f0b
 ```
 
 ---
 
-## 文件导航
+## 🎯 按场景推荐入口
 
-### Agent Research · 生态拆解（NEW）
+### 🎓 准备 AI 技术面试
+- [MCP 面试题库](./content/01-mcp/05-interview/qa.md) — 基础 + 进阶 + 实战，附一句话版
+- [MCP 11 个深度追问](./content/01-mcp/05-interview/mcp-11q.md) — Prompt 模板 / Gateway / FC 机制 / 语义透明
+- [MCP · 理解错的 10 件事](./content/01-mcp/05-interview/common-misconceptions.md) — 真实误解记录
+- [RAG 模拟面试官](./content/03-rag/mock-interview/) — 8 篇高频面试专题
 
-| 文件 | 内容 | 适合 |
-|---|---|---|
-| [ATDF 方法论](agent-research/methodology/ATDF.md) | 8 维度拆解框架 + 模板 | 想系统学习任何 AI 主题 |
-| [Agent 生态 2026](agent-research/research/agent-ecosystem-2026.md) | 协议战争 · 领域改造 · 创新空白 | 了解 Agent 全局 |
-| [OMC 拆解](agent-research/deep-dives/omc/omc-atdf.md) | 多 Agent 编排框架深度拆解 | 学 Agent 系统设计 |
-| [gstack 拆解](agent-research/deep-dives/gstack/gstack-atdf.md) | AI 编程方法论深度拆解 | 学角色 prompt 设计 |
-| [从 RAG 到 Memory](agent-research/concepts/rag-to-memory.md) | RAG 演化路线 + 商业分层 | 判断技术投入方向 |
-| [Karpathy 路线](agent-research/concepts/karpathy-route.md) | LLM OS → LLM Wiki → Software 3.0 | 理解 Memory 思想源头 |
+### 🏗️ 学 Agent 系统架构
+- [ATDF 8 维度拆解框架](./content/02-agent/methodology/ATDF.md) — 套这个模板分析任何 AI 项目
+- [OMC 多 Agent 编排深拆](./content/02-agent/deep-dives/omc/omc-atdf.md)
+- [Ralph 自省循环模式](./content/02-agent/deep-dives/omc/ralph-deep-dive.md)
+- [gstack AI 编程方法论](./content/02-agent/deep-dives/gstack/gstack-atdf.md)
+- [Agent 生态 2026 全局观](./content/02-agent/research/agent-ecosystem-2026.md)
 
-### MCP 完整路径
+### 🔍 RAG 工程实战
+- [V1 → V10 完整进化链](./code/rag) · 15 个版本的 Python 代码，可直接跑
+- [工程方法论手册](./content/03-rag/04-工程方法论手册.md) · 5 步方法 + 8 种失败模式
+- [混合检索 RRF 平局陷阱](./content/03-rag/mock-interview/05_混合检索RRF平局陷阱专题分析.md)
+- [Embedding 选型 + 合成 Query](./content/03-rag/mock-interview/06_embedding选型参考与合成Query.md)
 
-| 文件 | 内容 | 适合 |
-|---|---|---|
-| [01-foundations](mcp/01-foundations/README.md) | MCP是什么、N+M逻辑、生态意义 | 入门 |
-| [tools-resources-prompts](mcp/02-core-concepts/tools-resources-prompts.md) | 三类能力详解 + Schema + 大数据场景 | 核心概念 |
-| [function-calling](mcp/02-core-concepts/function-calling.md) | FC前世今生 + 完整循环代码示例 | 底层原理 |
-| [adapter-gateway](mcp/03-practical/adapter-gateway.md) | 异构系统接入 + Gateway设计 | 实战架构 |
-| [面试题库](mcp/05-interview/qa.md) | 基础+进阶+实战，含一句话版本 | 面试备战 |
-| [理解错的10件事](mcp/05-interview/common-misconceptions.md) | 真实误解记录，SEO价值高 | 查漏补缺 |
+### 🧠 方法论 & 思考框架
+- [5D 知识习得方法](./content/02-agent/methodology/5d-framework.md) · 可迁移到任意新领域
+- [从 RAG 到 Memory · 演化路线](./content/02-agent/concepts/rag-to-memory.md)
+- [Karpathy · LLM OS → LLM Wiki → Software 3.0](./content/02-agent/concepts/karpathy-route.md)
 
-### 交互式笔记（下载后浏览器直接打开）
-
-| 文件 | 内容 |
-|---|---|
-| [mcp_11q.html](mcp/interactive/mcp_11q.html) | 11个深度追问：Prompt模板/Gateway/FC机制/语义透明 |
-| [mcp_5q.html](mcp/interactive/mcp_5q.html) | 5个机制追问：AI停止后谁触发/Schema含义/动态注册 |
-| [knowledge_methodology.html](mcp/interactive/knowledge_methodology.html) | 5D知识习得方法论（可迁移到任意领域） |
-
-### 可运行代码
-
-| 文件 | 说明 |
-|---|---|
-| [hello-server-mcp.py](mcp/demo/hello-server-mcp.py) | 最简 MCP Server，理解基本结构 |
-| [file-server-mcp.py](mcp/demo/file-server-mcp.py) | 实战：搜索本地 Markdown 笔记 |
+### 🎨 交互式笔记（浏览器打开）
+- [MCP 深度追问系列](./interactive/mcp/) · 11Q + 5Q
+- [RAG 概念手册：向量与检索](./interactive/rag/) · 带类比动画
+- [Agent Loop Viz](./interactive/agent/agent-loop-viz.html) · RAF 驱动的循环可视化
 
 ---
 
-## 快速上手 MCP Demo
+## 🚀 本地启动 Docs Site
 
 ```bash
-# 1. 克隆仓库
 git clone https://github.com/bob798/ai-handbook.git
-cd ai-handbook/mcp/demo
-
-# 2. 创建虚拟环境（需要 Python 3.10+）
-python3 -m venv .venv
-source .venv/bin/activate
-
-# 3. 安装依赖
-pip install -r requirements.txt
-
-# 4. 运行最简示例
-python hello-server-mcp.py
-
-# 5. 运行笔记搜索 Server
-NOTES_PATH=/your/notes/path python file-server-mcp.py
+cd ai-handbook/web
+pnpm install
+pnpm dev                 # → http://localhost:3000
 ```
 
-Claude Desktop 配置见 [demo/README.md](mcp/demo/README.md)。
+**站点技术栈**：Next.js 16 · Tailwind v4 · remark/rehype · framer-motion
+
+**构建管线**：`predev` / `prebuild` 自动跑 `scripts/extract-content.ts`，扫描 `content/` 生成 `docs.json`，`interactive/` 通过 symlink 暴露为 `/viz/...`。
 
 ---
 
-## 博客自动同步
+## 🧪 跑 MCP Demo
 
-本仓库内容自动同步到 [Bob's Digital Garden](https://bob798.github.io/ai-handbook/)。
+```bash
+cd code/mcp-demo
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python hello-server-mcp.py                             # 最简 Server
+NOTES_PATH=/your/notes python file-server-mcp.py       # 搜索本地笔记
+```
 
-- push 到 main/master 后，GitHub Actions 通过 `repository_dispatch` 触发博客重建
-- Markdown → Quartz 渲染，HTML 交互笔记 → 静态页面直接访问
-- 配置：repo secret `BLOG_DISPATCH_TOKEN`（指向 bob798-blog 的 Fine-grained PAT）
+Claude Desktop 配置见 [code/mcp-demo/README.md](./code/mcp-demo/README.md)。
 
-## 关于作者
+---
 
-AI 应用工程师，做 [AI 开发日记](https://bob798.github.io) 系列内容。
+## 🏗️ 项目结构
 
-这个仓库是我边学边记的过程，不是整理好的教程。如果你发现错误或者有更好的理解，欢迎开 Issue。
+```
+ai-handbook/
+├── content/          52 篇 Markdown（Next.js 构建目标）
+│   ├── 01-mcp/
+│   ├── 02-agent/
+│   ├── 03-rag/
+│   └── 04-ai-programming/
+├── interactive/      27 个交互 HTML（浏览器直接打开）
+│   ├── mcp/  agent/  rag/  ai-programming/
+├── code/             可运行示例
+│   ├── mcp-demo/     Python MCP Server
+│   └── rag/          V1-V10 RAG 代码 + 测试
+└── web/              Next.js 16 文档站
+    ├── scripts/      extract-content.ts（构建期扫描）
+    └── src/          App Router 页面 + 组件
+```
 
-如果内容对你有帮助，欢迎 ⭐ **Star**。
+---
+
+## 🏷️ Tags
+
+`#MCP` `#AI-Agent` `#RAG` `#LLM` `#Claude-Code` `#AI-Engineering`
+`#Function-Calling` `#Prompt-Engineering` `#Vector-Search` `#Embedding`
+`#Next.js` `#TypeScript` `#中文技术文档` `#面试备战` `#知识图谱`
+
+---
+
+## 🧭 写作风格
+
+这些笔记**不是**：
+- ❌ 抄来的定义汇总（wiki 已经做了）
+- ❌ 给 AI 初学者的导论（网上一抓一大把）
+- ❌ 最佳实践总结（那只是结果，不是过程）
+
+这些笔记**是**：
+- ✅ 我从完全不懂到理解的**完整追问链**
+- ✅ 一个个"本来以为是 X，结果是 Y"的**反转记录**
+- ✅ 可以在 5 年后也有人参考的**体系化路径**
+
+---
+
+## 🤝 欢迎贡献
+
+- 🐛 发现内容错误 → 开 Issue 或直接 PR
+- ✍️ 有相同主题的不同角度思考 → 欢迎补充
+- 💡 想学但这里还没覆盖的主题 → 留个 Discussion 说说
+- ⭐ 觉得有用 → Star 让更多人发现
+
+---
+
+## 📬 关于作者
+
+[@bob798](https://github.com/bob798) · AI 应用工程师
+
+- 📖 [AI 开发日记](https://bob798.github.io) — 技术文章与行业观察
+- 🌐 [在线文档站](https://bob798.github.io/ai-handbook/)
+- 💌 发现错误或有更好理解，欢迎开 Issue
 
 ---
 
 ## License
 
-MIT
+MIT — 自由使用、修改、传播。署名不强制但欢迎。
+
+---
+
+<div align="center">
+
+**如果这些笔记让你少走了弯路，点个 ⭐ Star 让更多人看到 👇**
+
+</div>
