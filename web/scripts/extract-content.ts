@@ -174,7 +174,8 @@ async function main() {
     )}`
   );
 
-  // Expose interactive/ under /viz via symlink in public/
+  // Expose interactive/ under /viz via recursive copy in public/
+  // (was symlink; switched to copy for CI/static-export compatibility)
   const PUBLIC_VIZ = path.join(WEB_DIR, "public", "viz");
   fs.mkdirSync(path.dirname(PUBLIC_VIZ), { recursive: true });
   try {
@@ -183,8 +184,9 @@ async function main() {
       fs.rmSync(PUBLIC_VIZ, { recursive: true, force: true });
     }
   } catch { /* not present */ }
-  fs.symlinkSync("../../interactive", PUBLIC_VIZ, "dir");
-  console.log(`✓ Linked public/viz → ../../interactive`);
+  fs.cpSync(INTERACTIVE_DIR, PUBLIC_VIZ, { recursive: true });
+  const htmlCount = walk(PUBLIC_VIZ, ".html").length;
+  console.log(`✓ Copied interactive/ → public/viz/ (${htmlCount} HTML files)`);
 }
 
 main().catch((e) => {
