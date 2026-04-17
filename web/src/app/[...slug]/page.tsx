@@ -10,6 +10,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { TOC } from "@/components/TOC";
 import { SectionHero } from "@/components/SectionHero";
 import { DocCard, InteractiveCard } from "@/components/DocCard";
+import { DocBody } from "@/components/DocBody";
+import { Comments } from "@/components/Comments";
 
 export function generateStaticParams() {
   const paths: { slug: string[] }[] = [];
@@ -108,7 +110,8 @@ export default async function DocPage({ params }: PageProps) {
       <Sidebar activeSection={doc.section} />
       <main className="flex-1 min-w-0 max-w-4xl px-10 py-12">
         <div className="mb-6 text-xs text-zinc-500 font-mono">{doc.path}</div>
-        <article className="prose-doc" dangerouslySetInnerHTML={{ __html: doc.contentHtml }} />
+        <DocBody html={doc.contentHtml} />
+        <Comments />
       </main>
       <TOC headings={doc.headings} />
     </div>

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /Users/bob/workspace/ai-handbook && python3 -m pytest rag/code/tests/test_mock_interviewer.py -q 2>&1 | tail -5"
+            "command": "cd /Users/bob/workspace/learn-ai-engineering && python3 -m pytest code/rag/tests/test_mock_interviewer.py -q 2>&1 | tail -5"
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /Users/bob/workspace/ai-handbook/.claude/hooks/daily-log.py"
+            "command": "python3 /Users/bob/workspace/learn-ai-engineering/.claude/hooks/daily-log.py"
           }
         ]
       }
