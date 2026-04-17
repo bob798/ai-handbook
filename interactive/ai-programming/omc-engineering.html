@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OMC 工程架构拆解 · oh-my-claudecode</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB",sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;padding:0 0 60px}
+.container{max-width:900px;margin:0 auto;padding:28px 16px 0}
+.top-nav{background:#0c0f14;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.top-nav-left{display:flex;align-items:center;gap:8px;font-size:12px;color:#bbb}
+.top-nav-dot{width:7px;height:7px;border-radius:50%;background:#EF9F27;display:inline-block}
+.top-nav-badge{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#EF9F27;background:rgba(239,159,39,.15);padding:2px 8px;border-radius:10px;border:1px solid rgba(239,159,39,.3)}
+.top-nav a{color:#888;font-size:11px;text-decoration:none}.top-nav a:hover{color:#ddd}
+.header{margin-bottom:24px;border-bottom:.5px solid #c8c7be;padding-bottom:20px}
+.header h1{font-size:24px;font-weight:500;letter-spacing:-.3px;margin-bottom:6px}
+.header .tagline{font-size:13px;color:#5f5e5a;line-height:1.6;max-width:700px}
+.header .tagline strong{color:#EF9F27}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:24px}
+.tab{padding:6px 11px;font-size:11px;border-radius:6px;cursor:pointer;color:#5f5e5a;border:.5px solid #c8c7be;background:#fff;transition:all .15s;white-space:nowrap}
+.tab.active{color:#fff;background:#EF9F27;border-color:#EF9F27;font-weight:500}
+.tab:hover:not(.active){background:#ece9e2}
+.panel{display:none}.panel.active{display:block}
+.sl{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#888780;margin:18px 0 9px}
+.sl:first-child{margin-top:0}
+.callout{padding:10px 14px;background:#fff;border-radius:0 8px 8px 0;margin:10px 0;font-size:13px;color:#444441;line-height:1.7;border:.5px solid #e8e3da;border-left:3px solid #EF9F27}
+.callout strong{color:#1a1a18}
+.callout-blue{padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:13px;line-height:1.7;background:#e6f1fb;color:#042c53;border:.5px solid #b5d4f4;border-left:3px solid #3b8bd4}
+.callout-blue strong{color:#0c447c}
+.callout-green{padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:13px;line-height:1.7;background:#ecfdf5;color:#064e3b;border:.5px solid #6ee7b7;border-left:3px solid #059669}
+.callout-green strong{color:#065f46}
+.card{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:10px;border:.5px solid #dedad4}
+.card-t{font-size:13px;font-weight:500;color:#1a1a18;margin-bottom:5px}
+.card-b{font-size:12px;color:#5f5e5a;line-height:1.75}
+.card-b code{font-family:"SF Mono",monospace;font-size:11px;background:#e8e6df;padding:1px 5px;border-radius:3px;color:#2c2c2a}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0}
+@media(max-width:580px){.row,.row3{grid-template-columns:1fr}}
+.gbox{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.7;border:.5px solid #97c459;background:#eaf3de;color:#173404}
+.rbox{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.7;border:.5px solid #f09595;background:#fcebeb;color:#501313}
+.obox{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.7;border:.5px solid #EF9F27;background:#faeeda;color:#412402}
+table{border-collapse:collapse;width:100%;font-size:12px;margin:8px 0}
+th{background:#f5f4f0;padding:8px 10px;text-align:left;font-weight:500;border:.5px solid #dedad4;color:#1a1a18}
+td{padding:8px 10px;border:.5px solid #dedad4;color:#5f5e5a;line-height:1.5;vertical-align:top}
+td strong{color:#1a1a18}
+.sep{border:none;border-top:.5px solid #dedad4;margin:16px 0}
+
+/* ── Architecture Diagram Components ── */
+.arch{background:#fff;border-radius:12px;padding:20px;margin:12px 0;border:.5px solid #dedad4;overflow-x:auto}
+.arch-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#EF9F27;margin-bottom:12px}
+.layer{border:1.5px solid;border-radius:8px;padding:12px;margin-bottom:8px;position:relative}
+.layer-label{position:absolute;top:-8px;left:12px;background:#fff;padding:0 6px;font-size:10px;font-weight:600;letter-spacing:.04em}
+.boxes{display:flex;gap:6px;flex-wrap:wrap}
+.box{padding:5px 10px;border-radius:6px;font-size:10px;font-weight:500;border:1px solid;white-space:nowrap}
+.arrow-down{text-align:center;font-size:16px;color:#c8c7be;margin:4px 0;line-height:1}
+.flow-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0}
+.flow-h .node{padding:6px 12px;border-radius:6px;font-size:11px;font-weight:500;border:1px solid;background:#fff;white-space:nowrap}
+.flow-h .arr{color:#c8c7be;font-size:14px;flex-shrink:0}
+.flow-h .node.haiku{border-color:#97c459;background:#eaf3de;color:#3b6d11}
+.flow-h .node.sonnet{border-color:#85b7eb;background:#e6f1fb;color:#185fa5}
+.flow-h .node.opus{border-color:#EF9F27;background:#faeeda;color:#854f0b}
+.flow-h .node.core{border-color:#EF9F27;background:#fff}
+.flow-h .node.infra{border-color:#c8c7be;background:#f5f4f0;color:#5f5e5a}
+.flow-v{display:flex;flex-direction:column;align-items:center;gap:2px;margin:10px 0}
+.flow-v .node{padding:6px 16px;border-radius:6px;font-size:11px;font-weight:500;border:1px solid #dedad4;background:#fff;min-width:200px;text-align:center}
+.flow-v .arr{color:#c8c7be;font-size:14px}
+.flow-v .branch{display:flex;gap:8px;align-items:center}
+.flow-v .branch .node{min-width:auto;font-size:10px;padding:4px 10px}
+
+/* Module tree */
+.mtree{font-family:"SF Mono",monospace;font-size:11px;line-height:1.8;color:#5f5e5a;background:#f9f8f5;border-radius:8px;padding:14px 16px;margin:8px 0;border:.5px solid #dedad4;overflow-x:auto;white-space:pre}
+.mtree strong{color:#1a1a18;font-weight:600}
+.mtree .hl{color:#EF9F27;font-weight:600}
+.mtree .dim{color:#c8c7be}
+
+.step{display:flex;gap:10px;margin-bottom:9px;align-items:flex-start}
+.sn{width:24px;height:24px;border-radius:50%;background:#EF9F27;color:#fff;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.sb{flex:1;font-size:13px;color:#444441;line-height:1.65}
+.sb strong{color:#1a1a18}
+
+.footer{text-align:center;padding:32px 16px 0;font-size:11px;color:#c8c7be}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="top-nav-left">
+    <span class="top-nav-dot"></span>
+    <span>AI 修炼册</span>
+    <span class="top-nav-badge">工程架构拆解</span>
+  </div>
+  <a href="omc-analysis.html">&larr; 返回案例分析</a>
+</nav>
+
+<div class="container">
+  <div class="header">
+    <h1>OMC 工程架构拆解</h1>
+    <p class="tagline">从源码视角拆解 oh-my-claudecode 的<strong>系统架构、核心机制、模块边界和运行逻辑</strong>。TypeScript 实现，~200 源文件，编译后主入口 3MB。</p>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="show(0)">&#x1F3D7; 系统架构图</div>
+    <div class="tab" onclick="show(1)">&#x2699; 核心机制</div>
+    <div class="tab" onclick="show(2)">&#x1F4E6; 模块拆解</div>
+    <div class="tab" onclick="show(3)">&#x26A1; 运行逻辑</div>
+    <div class="tab" onclick="show(4)">&#x1F527; Team 模式</div>
+  </div>
+
+  <!-- ══════ Tab 0: 系统架构图 ══════ -->
+  <div class="panel active" id="p0">
+
+    <div class="sl">四层架构总览</div>
+    <div class="arch">
+      <div class="arch-title">OMC System Architecture</div>
+
+      <div class="layer" style="border-color:#EF9F27;background:#fffcf5">
+        <div class="layer-label" style="color:#854f0b">L4 编排层 &middot; Orchestration</div>
+        <div class="boxes">
+          <div class="box" style="border-color:#EF9F27;background:#faeeda;color:#854f0b">Magic Keywords</div>
+          <div class="box" style="border-color:#EF9F27;background:#faeeda;color:#854f0b">Delegation Enforcer</div>
+          <div class="box" style="border-color:#EF9F27;background:#faeeda;color:#854f0b">Continuation Enforcement</div>
+          <div class="box" style="border-color:#EF9F27;background:#faeeda;color:#854f0b">Mode Controller</div>
+          <div class="box" style="border-color:#EF9F27;background:#faeeda;color:#854f0b">System Prompt Assembly</div>
+        </div>
+      </div>
+      <div class="arrow-down">&darr;</div>
+
+      <div class="layer" style="border-color:#85b7eb;background:#f5f9fe">
+        <div class="layer-label" style="color:#185fa5">L3 Agent 层 &middot; Agents</div>
+        <div style="margin-bottom:6px">
+          <div style="font-size:9px;color:#888780;margin-bottom:4px">构建通道</div>
+          <div class="boxes">
+            <div class="box" style="border-color:#97c459;color:#3b6d11">explore <sup>H</sup></div>
+            <div class="box" style="border-color:#EF9F27;color:#854f0b">analyst <sup>O</sup></div>
+            <div class="box" style="border-color:#EF9F27;color:#854f0b">planner <sup>O</sup></div>
+            <div class="box" style="border-color:#EF9F27;color:#854f0b">architect <sup>O</sup></div>
+            <div class="box" style="border-color:#85b7eb;color:#185fa5">debugger <sup>S</sup></div>
+            <div class="box" style="border-color:#85b7eb;color:#185fa5">executor <sup>S</sup></div>
+            <div class="box" style="border-color:#85b7eb;color:#185fa5">verifier <sup>S</sup></div>
+          </div>
+        </div>
+        <div style="margin-bottom:6px">
+          <div style="font-size:9px;color:#888780;margin-bottom:4px">审核通道</div>
+          <div class="boxes">
+            <div class="box" style="border-color:#85b7eb;color:#185fa5">security-reviewer <sup>S</sup></div>
+            <div class="box" style="border-color:#EF9F27;color:#854f0b">code-reviewer <sup>O</sup></div>
+          </div>
+        </div>
+        <div style="margin-bottom:6px">
+          <div style="font-size:9px;color:#888780;margin-bottom:4px">领域通道</div>
+          <div class="boxes">
+            <div class="box" style="border-color:#85b7eb;color:#185fa5">test-engineer <sup>S</sup></div>
+            <div class="box" style="border-color:#85b7eb;color:#185fa5">designer <sup>S</sup></div>
+            <div class="box" style="border-color:#97c459;color:#3b6d11">writer <sup>H</sup></div>
+            <div class="box" style="border-color:#85b7eb;color:#185fa5">git-master <sup>S</sup></div>
+            <div class="box" style="border-color:#EF9F27;color:#854f0b">code-simplifier <sup>O</sup></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:#888780;margin-bottom:4px">产品通道 + 协调</div>
+          <div class="boxes">
+            <div class="box" style="border-color:#85b7eb;color:#185fa5">product-manager <sup>S</sup></div>
+            <div class="box" style="border-color:#85b7eb;color:#185fa5">ux-researcher <sup>S</sup></div>
+            <div class="box" style="border-color:#EF9F27;color:#854f0b">critic <sup>O</sup></div>
+          </div>
+        </div>
+        <div style="font-size:9px;color:#c8c7be;margin-top:6px"><sup>H</sup>=Haiku &nbsp; <sup>S</sup>=Sonnet &nbsp; <sup>O</sup>=Opus</div>
+      </div>
+      <div class="arrow-down">&darr;</div>
+
+      <div class="layer" style="border-color:#97c459;background:#f6faf0">
+        <div class="layer-label" style="color:#3b6d11">L2 能力层 &middot; Skills &amp; Config</div>
+        <div class="boxes">
+          <div class="box" style="border-color:#97c459;color:#3b6d11">Skill Auto-Extract</div>
+          <div class="box" style="border-color:#97c459;color:#3b6d11">Builtin Skills</div>
+          <div class="box" style="border-color:#97c459;color:#3b6d11">Plugin Dir</div>
+          <div class="box" style="border-color:#97c459;color:#3b6d11">CLAUDE.md Loader</div>
+          <div class="box" style="border-color:#97c459;color:#3b6d11">Config (Zod)</div>
+        </div>
+      </div>
+      <div class="arrow-down">&darr;</div>
+
+      <div class="layer" style="border-color:#c8c7be;background:#fafaf8">
+        <div class="layer-label" style="color:#5f5e5a">L1 基础设施层 &middot; Infrastructure</div>
+        <div class="boxes">
+          <div class="box" style="border-color:#c8c7be;color:#5f5e5a">HUD Renderer</div>
+          <div class="box" style="border-color:#c8c7be;color:#5f5e5a">Job State DB (SQLite)</div>
+          <div class="box" style="border-color:#c8c7be;color:#5f5e5a">MCP Servers</div>
+          <div class="box" style="border-color:#c8c7be;color:#5f5e5a">Background Tasks</div>
+          <div class="box" style="border-color:#c8c7be;color:#5f5e5a">Git Worktree</div>
+          <div class="box" style="border-color:#c8c7be;color:#5f5e5a">Atomic Write</div>
+          <div class="box" style="border-color:#c8c7be;color:#5f5e5a">File Lock</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sl">模型路由策略图</div>
+    <div class="arch">
+      <div class="arch-title">Model Routing Pipeline</div>
+      <div class="flow-v">
+        <div class="node" style="border-color:#EF9F27;background:#faeeda">User Task Input</div>
+        <div class="arr">&darr;</div>
+        <div class="node">Delegation Enforcer &middot; 检查 Agent 定义中的 model 字段</div>
+        <div class="arr">&darr;</div>
+        <div class="node">Model Normalization &middot; claude-sonnet-4-6 &rarr; sonnet</div>
+        <div class="arr">&darr;</div>
+        <div class="branch">
+          <div class="node haiku">Haiku<br><span style="font-size:9px">explore, writer<br>分类 / 搜索 / 文档</span></div>
+          <div class="node sonnet">Sonnet<br><span style="font-size:9px">executor, debugger, test-eng<br>编码 / 调试 / 测试</span></div>
+          <div class="node opus">Opus<br><span style="font-size:9px">architect, analyst, critic<br>架构 / 分析 / 审核</span></div>
+        </div>
+        <div class="arr">&darr;</div>
+        <div class="node" style="border-color:#c8c7be;background:#f5f4f0;font-size:10px">Force Inherit 模式（Bedrock/Vertex）：剥离 model 参数，继承用户配置</div>
+      </div>
+    </div>
+
+    <div class="sl">执行模式矩阵</div>
+    <div class="arch">
+      <div class="arch-title">Execution Modes</div>
+      <table>
+        <tr><th>模式</th><th>触发关键词</th><th>编排策略</th><th>并发模型</th><th>状态文件</th></tr>
+        <tr><td><strong>Team</strong></td><td>team</td><td>管线式多 Agent 协作</td><td>Worker 池 + Dispatch Queue</td><td>.omc/state/team-state.json</td></tr>
+        <tr><td><strong>Autopilot</strong></td><td>autopilot</td><td>单 Agent 自主执行</td><td>顺序执行</td><td>.omc/state/autopilot-state.json</td></tr>
+        <tr><td><strong>Ralph</strong></td><td>ralph</td><td>执行 + 验证循环</td><td>顺序 + 回溯</td><td>.omc/state/ralph-state.json</td></tr>
+        <tr><td><strong>Ultrawork</strong></td><td>ulw, uw</td><td>最大并行处理</td><td>BackgroundTaskManager (max 5)</td><td>.omc/state/ultrawork-state.json</td></tr>
+        <tr><td><strong>Ralplan</strong></td><td>ralplan</td><td>规划导向模式</td><td>Planner &rarr; Executor 链</td><td>.omc/state/ralplan-state.json</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════ Tab 1: 核心机制 ══════ -->
+  <div class="panel" id="p1">
+
+    <div class="sl">机制 1 &middot; Magic Keywords 魔法关键词</div>
+    <div class="card">
+      <div class="card-t">src/features/magic-keywords.ts (18.5 KB)</div>
+      <div class="card-b">
+        <strong>作用</strong>：拦截用户输入，检测关键词，激活对应模式增强。<br><br>
+        <strong>实现细节</strong>：<br>
+        &middot; 代码感知模式匹配 —— 先剥离反引号代码块，防止代码中的变量名误触发<br>
+        &middot; 80 字符上下文窗口 —— 过滤教育类查询（"what is", "how to", "explain"）<br>
+        &middot; 正则转义防注入 —— 用户不能通过构造关键词注入指令<br>
+        &middot; 多语言支持 —— 10+ 种语言的关键词匹配
+      </div>
+    </div>
+    <table>
+      <tr><th>关键词</th><th>激活模式</th><th>注入行为</th></tr>
+      <tr><td><code>ultrawork</code> / <code>ulw</code></td><td>Ultrawork</td><td>注入 "MUST LEVERAGE ALL AVAILABLE AGENTS" + 启用后台任务</td></tr>
+      <tr><td><code>search</code> / <code>find</code></td><td>Search</td><td>并行启动 explore + document-specialist</td></tr>
+      <tr><td><code>analyze</code> / <code>investigate</code></td><td>Analyze</td><td>先 gather context，再 deep investigation</td></tr>
+      <tr><td><code>ultrathink</code> / <code>think</code></td><td>Ultrathink</td><td>激活 extended reasoning，跳过简单查询</td></tr>
+    </table>
+
+    <div class="sl">机制 2 &middot; Delegation Enforcer 委派执行器</div>
+    <div class="card">
+      <div class="card-t">src/features/delegation-enforcer.ts (10.1 KB)</div>
+      <div class="card-b">
+        <strong>作用</strong>：拦截所有 Agent 调用，注入正确的模型参数。<br><br>
+        <strong>工作流</strong>：<br>
+        1. 拦截 Task/Agent 调用<br>
+        2. 检查是否已有 model 参数<br>
+        3. 若缺失 &rarr; 从 Agent 定义中读取默认模型<br>
+        4. 标准化模型名 &rarr; <code>claude-sonnet-4-6</code> &rarr; <code>sonnet</code><br>
+        5. 检测 Bedrock/Vertex 环境 &rarr; 启用 Force Inherit（剥离 model 参数）<br>
+        6. 应用 modelAliases 配置（如有）<br><br>
+        <strong>缓存策略</strong>：按环境变量状态缓存配置，环境变化时重新生成。
+      </div>
+    </div>
+
+    <div class="sl">机制 3 &middot; Continuation Enforcement 任务续跑</div>
+    <div class="card">
+      <div class="card-t">src/features/continuation-enforcement.ts (7.1 KB)</div>
+      <div class="card-b">
+        <strong>作用</strong>：防止 Agent 在任务未完成时停止。<br><br>
+        <strong>工作流</strong>：<br>
+        1. Hook 拦截 "Stop" 事件<br>
+        2. 检查任务完成状态（所有 todo 是否 completed）<br>
+        3. 若有未完成项 &rarr; 阻止停止，注入持续提醒<br>
+        4. 验证清单：todo 全完成 + 功能已验证 + 测试通过 + 无报错 + 代码质量可接受
+      </div>
+    </div>
+
+    <div class="sl">机制 4 &middot; Background Task Manager 后台任务</div>
+    <div class="card">
+      <div class="card-t">src/features/background-tasks.ts (10.7 KB)</div>
+      <div class="card-b">
+        <strong>并发模型</strong>：最大 5 个并行后台任务。<br><br>
+        <strong>决策逻辑</strong>（模式匹配判断操作类型）：<br>
+        &middot; 长运行操作（npm install / docker build / 大型测试）&rarr; <code>run_in_background: true</code><br>
+        &middot; 快速操作（git status / ls / cat）&rarr; 立即执行<br>
+        &middot; 结果获取 &rarr; <code>TaskOutput</code> 工具轮询<br><br>
+        <strong>状态持久化</strong>：<code>.omc/state/jobs.db</code>（SQLite WAL 模式），按 worktree 隔离，24 小时自动清理终态任务。
+      </div>
+    </div>
+
+    <div class="sl">机制 5 &middot; Verification System 验证系统</div>
+    <div class="card">
+      <div class="card-t">src/verification/tier-selector.ts (3.8 KB) + 测试 (11.2 KB)</div>
+      <div class="card-b">
+        <strong>作用</strong>：根据任务复杂度选择验证等级。<br><br>
+        &middot; 验证 Agent（verifier）收集完成证据<br>
+        &middot; 测试代码量是实现代码的 3 倍 —— 说明验证逻辑本身被严格测试<br>
+        &middot; 与 Continuation Enforcement 联动：验证不通过 &rarr; 阻止停止
+      </div>
+    </div>
+
+    <div class="sl">机制 6 &middot; Prompt Assembly 提示词组装</div>
+    <div class="card">
+      <div class="card-t">src/agents/prompt-helpers.ts (8.6 KB) + prompt-sections/</div>
+      <div class="card-b">
+        <strong>分层组装流程</strong>：<br>
+        1. 基础编排指令（XML 分隔）<br>
+        2. 文件上下文（标注 untrusted 警告）<br>
+        3. 用户提示词（主请求）<br>
+        4. 以双换行拼接<br><br>
+        <strong>安全机制</strong>：<br>
+        &middot; XML 标签转义（防止 prompt injection）<br>
+        &middot; 截断到 4000 字符（untrusted 内容）<br>
+        &middot; Surrogate pair 校验<br>
+        &middot; Agent 名称只允许字母数字 + 连字符（防止路径穿越）
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ Tab 2: 模块拆解 ══════ -->
+  <div class="panel" id="p2">
+    <div class="sl">源码目录结构</div>
+    <div class="mtree"><strong class="hl">src/</strong>
+├── <strong>index.ts</strong> (11.7KB)          <span class="dim">← 主入口 createOmcSession()</span>
+│
+├── <strong class="hl">agents/</strong>                     <span class="dim">← Agent 系统（20+ 角色）</span>
+│   ├── types.ts (4.3KB)         <span class="dim">AgentConfig / FullAgentConfig 类型</span>
+│   ├── definitions.ts (16.2KB)  <span class="dim">所有 Agent 配置（模型/工具/触发器）</span>
+│   ├── utils.ts (11.4KB)        <span class="dim">加载 / 委派表 / 深度合并</span>
+│   ├── prompt-helpers.ts (8.6KB)<span class="dim">提示词组装 + 安全清理</span>
+│   ├── prompt-sections/         <span class="dim">模块化提示词片段</span>
+│   └── [agent].ts               <span class="dim">各 Agent 的专属逻辑</span>
+│
+├── <strong class="hl">features/</strong>                   <span class="dim">← 核心特性模块</span>
+│   ├── magic-keywords.ts (18.5KB)     <span class="dim">关键词检测 + 模式激活</span>
+│   ├── delegation-enforcer.ts (10.1KB)<span class="dim">模型路由注入</span>
+│   ├── continuation-enforcement.ts    <span class="dim">任务续跑保障</span>
+│   ├── background-tasks.ts (10.7KB)   <span class="dim">后台任务管理</span>
+│   ├── auto-update.ts (37.9KB)        <span class="dim">版本管理（最大文件）</span>
+│   └── [placeholders]/               <span class="dim">model-routing/ rate-limit-wait/ ...</span>
+│
+├── <strong class="hl">hud/</strong>                        <span class="dim">← 仪表盘系统（最复杂子系统）</span>
+│   ├── index.ts (19.3KB)       <span class="dim">主入口 + 状态聚合</span>
+│   ├── types.ts (26.4KB)       <span class="dim">30+ 可配置元素 + 5 种预设</span>
+│   ├── usage-api.ts (29.7KB)   <span class="dim">Rate limit 双路径上报</span>
+│   ├── transcript.ts (24.4KB)  <span class="dim">Session 解析（Agent/Skill/Token）</span>
+│   ├── render.ts (18KB)        <span class="dim">3 区域渲染（line1/main/detail）</span>
+│   └── mission-board.ts (21.4KB)<span class="dim">任务面板</span>
+│
+├── <strong class="hl">team/</strong>                       <span class="dim">← Team 模式协调（20+ 文件）</span>
+│   ├── runtime[-v2].ts          <span class="dim">Worker 生命周期</span>
+│   ├── dispatch-queue.ts        <span class="dim">任务分发队列</span>
+│   ├── inbox-outbox.ts          <span class="dim">异步消息</span>
+│   ├── message-router.ts        <span class="dim">角色路由</span>
+│   ├── phase-controller.ts      <span class="dim">阶段控制器</span>
+│   ├── worker-health.ts         <span class="dim">健康监控 + 心跳</span>
+│   ├── merge-coordinator.ts     <span class="dim">Git 合并冲突解决</span>
+│   └── git-worktree.ts          <span class="dim">隔离工作目录</span>
+│
+├── <strong class="hl">mcp/</strong>                        <span class="dim">← MCP 协议层</span>
+│   ├── job-management.ts (27KB) <span class="dim">核心复杂度（最大单文件）</span>
+│   ├── standalone-server.ts     <span class="dim">单机部署</span>
+│   ├── team-server.ts           <span class="dim">团队部署</span>
+│   └── prompt-injection.ts      <span class="dim">注入防护</span>
+│
+├── <strong class="hl">lib/</strong>                        <span class="dim">← 基础库</span>
+│   ├── job-state-db.ts (23.5KB) <span class="dim">SQLite 持久化</span>
+│   ├── worktree-paths.ts (27.7KB)<span class="dim">Git worktree 管理</span>
+│   ├── atomic-write.ts          <span class="dim">安全写入</span>
+│   ├── file-lock.ts             <span class="dim">并发锁</span>
+│   └── shared-memory.ts         <span class="dim">IPC 共享内存</span>
+│
+├── <strong class="hl">config/</strong>                     <span class="dim">← 配置系统</span>
+│   ├── loader.ts (26.2KB)       <span class="dim">解析 + 校验</span>
+│   └── models.ts (10.7KB)       <span class="dim">Zod Schema 定义</span>
+│
+└── <strong class="hl">bridge/</strong>                     <span class="dim">← 编译产物</span>
+    ├── cli.cjs (3MB)            <span class="dim">主 CLI 入口</span>
+    ├── mcp-server.cjs (888KB)   <span class="dim">MCP 服务器</span>
+    ├── team-mcp.cjs (657KB)     <span class="dim">Team MCP</span>
+    └── gyoshu_bridge.py (32KB)  <span class="dim">Python 桥接</span></div>
+
+    <div class="sl">模块依赖关系</div>
+    <div class="arch">
+      <div class="arch-title">Module Dependencies (Simplified)</div>
+      <div class="flow-v">
+        <div class="node" style="border-color:#EF9F27;background:#faeeda"><strong>index.ts</strong> &middot; createOmcSession()</div>
+        <div class="arr">&darr; 依赖</div>
+        <div class="branch" style="flex-wrap:wrap;justify-content:center;gap:6px">
+          <div class="node" style="border-color:#EF9F27">agents/<br>definitions</div>
+          <div class="node" style="border-color:#EF9F27">features/<br>magic-keywords</div>
+          <div class="node" style="border-color:#EF9F27">features/<br>delegation</div>
+          <div class="node" style="border-color:#97c459">config/<br>loader</div>
+        </div>
+        <div class="arr">&darr; 依赖</div>
+        <div class="branch" style="flex-wrap:wrap;justify-content:center;gap:6px">
+          <div class="node" style="border-color:#85b7eb">hud/</div>
+          <div class="node" style="border-color:#85b7eb">team/</div>
+          <div class="node" style="border-color:#85b7eb">mcp/</div>
+          <div class="node" style="border-color:#85b7eb">verification/</div>
+        </div>
+        <div class="arr">&darr; 依赖</div>
+        <div class="branch" style="flex-wrap:wrap;justify-content:center;gap:6px">
+          <div class="node" style="border-color:#c8c7be;background:#f5f4f0">lib/job-state-db</div>
+          <div class="node" style="border-color:#c8c7be;background:#f5f4f0">lib/atomic-write</div>
+          <div class="node" style="border-color:#c8c7be;background:#f5f4f0">lib/file-lock</div>
+          <div class="node" style="border-color:#c8c7be;background:#f5f4f0">lib/worktree-paths</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sl">复杂度热力图（按文件大小）</div>
+    <table>
+      <tr><th>模块</th><th>最大文件</th><th>大小</th><th>复杂度说明</th></tr>
+      <tr><td><strong>features/</strong></td><td>auto-update.ts</td><td>37.9 KB</td><td>版本管理逻辑最复杂</td></tr>
+      <tr><td><strong>hud/</strong></td><td>usage-api.ts</td><td>29.7 KB</td><td>双路径 rate limit + 多 provider</td></tr>
+      <tr><td><strong>lib/</strong></td><td>worktree-paths.ts</td><td>27.7 KB</td><td>Git worktree 的各种边界情况</td></tr>
+      <tr><td><strong>mcp/</strong></td><td>job-management.ts</td><td>27.0 KB</td><td>异步任务生命周期管理</td></tr>
+      <tr><td><strong>config/</strong></td><td>loader.ts</td><td>26.2 KB</td><td>配置解析 + 校验 + 初始化</td></tr>
+      <tr><td><strong>agents/</strong></td><td>definitions.ts</td><td>16.2 KB</td><td>20+ Agent 完整定义</td></tr>
+    </table>
+  </div>
+
+  <!-- ══════ Tab 3: 运行逻辑 ══════ -->
+  <div class="panel" id="p3">
+
+    <div class="sl">主循环 &middot; 从用户输入到输出</div>
+    <div class="arch">
+      <div class="arch-title">Complete Orchestration Loop</div>
+      <div class="flow-v">
+        <div class="node" style="border-color:#EF9F27;background:#faeeda"><strong>User Input</strong> (Natural Language)</div>
+        <div class="arr">&darr;</div>
+        <div class="node"><strong>Magic Keyword Detection</strong><br><span style="font-size:10px">剥离代码块 &rarr; 正则匹配 &rarr; 过滤教育类查询</span></div>
+        <div class="arr">&darr;</div>
+        <div class="node"><strong>System Prompt Assembly</strong><br><span style="font-size:10px">base + continuation + context injection + mode enhancements</span></div>
+        <div class="arr">&darr;</div>
+        <div class="node"><strong>Agent Delegation Router</strong><br><span style="font-size:10px">buildDelegationTable() &rarr; 模式匹配 &rarr; 路由到专业 Agent</span></div>
+        <div class="arr">&darr;</div>
+        <div class="node"><strong>Model Selection</strong><br><span style="font-size:10px">Agent 定义默认值 &rarr; Delegation Enforcer 标准化 &rarr; 用户 override</span></div>
+        <div class="arr">&darr;</div>
+        <div class="branch">
+          <div class="node" style="font-size:10px;border-color:#85b7eb">Sequential<br>(dependent tasks)</div>
+          <div style="color:#c8c7be;font-size:12px">or</div>
+          <div class="node" style="font-size:10px;border-color:#EF9F27">Parallel<br>(BackgroundTaskManager, max 5)</div>
+        </div>
+        <div class="arr">&darr;</div>
+        <div class="node" style="border-color:#c8c7be;background:#f5f4f0"><strong>Job State Persistence</strong><br><span style="font-size:10px">.omc/state/jobs.db (SQLite WAL, per-worktree)</span></div>
+        <div class="arr">&darr;</div>
+        <div class="node"><strong>Continuation Enforcement</strong><br><span style="font-size:10px">检查 todo 完成状态 &rarr; 未完成则阻止 Stop</span></div>
+        <div class="arr">&darr;</div>
+        <div class="node"><strong>Verification</strong><br><span style="font-size:10px">tier-selector 选择验证等级 &rarr; verifier 收集证据</span></div>
+        <div class="arr">&darr;</div>
+        <div class="node" style="border-color:#97c459;background:#eaf3de"><strong>HUD Update + Output</strong></div>
+      </div>
+    </div>
+
+    <div class="sl">初始化流程 &middot; createOmcSession()</div>
+    <div class="step"><div class="sn">1</div><div class="sb"><strong>加载 Agent 定义</strong> — 解析 <code>types.ts</code> schema，合并用户 override</div></div>
+    <div class="step"><div class="sn">2</div><div class="sb"><strong>配置模型路由</strong> — 确定每个 Agent 的模型层级，加载 Delegation Enforcer</div></div>
+    <div class="step"><div class="sn">3</div><div class="sb"><strong>初始化 MCP 服务器</strong> — Standalone 或 Team 模式，配置 Job Management</div></div>
+    <div class="step"><div class="sn">4</div><div class="sb"><strong>构建编排提示词</strong> — Agent 委派表 + 触发器定义 + 类别指引 + Prompt Sections 组装</div></div>
+    <div class="step"><div class="sn">5</div><div class="sb"><strong>就绪</strong> — Magic Keyword 处理器激活 + Background Task Manager 运行 + HUD 渲染启用 + Continuation Enforcement 监视</div></div>
+
+    <div class="sl">Agent 生命周期</div>
+    <div class="arch">
+      <div class="arch-title">Agent Lifecycle</div>
+      <div class="flow-h" style="flex-wrap:wrap">
+        <div class="node core">Load Definition</div>
+        <div class="arr">&rarr;</div>
+        <div class="node core">Read Prompt<br><span style="font-size:9px">/agents/{name}.md</span></div>
+        <div class="arr">&rarr;</div>
+        <div class="node core">Merge Overrides</div>
+        <div class="arr">&rarr;</div>
+        <div class="node core">Validate Name<br><span style="font-size:9px">alphanumeric+hyphen</span></div>
+        <div class="arr">&rarr;</div>
+        <div class="node core">Parse Frontmatter<br><span style="font-size:9px">disallowedTools</span></div>
+        <div class="arr">&rarr;</div>
+        <div class="node core">Security Check<br><span style="font-size:9px">path traversal</span></div>
+        <div class="arr">&rarr;</div>
+        <div class="node" style="border-color:#97c459;background:#eaf3de">FullAgentConfig</div>
+      </div>
+    </div>
+
+    <div class="sl">HUD 渲染管线</div>
+    <div class="step"><div class="sn">1</div><div class="sb"><strong>数据采集</strong>（并行）— 读取 OMC 状态 + 查询 job-state-db + 获取 rate limit + 解析 mission board</div></div>
+    <div class="step"><div class="sn">2</div><div class="sb"><strong>Transcript 分析</strong> — 提取活跃 Agent / Skill 调用次数 / todo 完成率 / Token 用量 / Session 健康度</div></div>
+    <div class="step"><div class="sn">3</div><div class="sb"><strong>渲染引擎</strong> — 加载预设 (minimal/focused/full/dense) &rarr; 应用自定义元素 &rarr; 自动检测终端宽度 &rarr; 渲染 3 区域 (line1/main/detail)</div></div>
+    <div class="step"><div class="sn">4</div><div class="sb"><strong>Fire-and-forget</strong> — 异步 spawn session-summary 脚本，PID 存活检测，时间戳节流</div></div>
+  </div>
+
+  <!-- ══════ Tab 4: Team 模式 ══════ -->
+  <div class="panel" id="p4">
+
+    <div class="sl">Team 模式架构图</div>
+    <div class="arch">
+      <div class="arch-title">Team Mode Coordination Architecture</div>
+
+      <div class="layer" style="border-color:#EF9F27;background:#fffcf5">
+        <div class="layer-label" style="color:#854f0b">协调层 &middot; Coordination</div>
+        <div class="boxes">
+          <div class="box" style="border-color:#EF9F27;background:#faeeda;color:#854f0b">Phase Controller</div>
+          <div class="box" style="border-color:#EF9F27;background:#faeeda;color:#854f0b">Dispatch Queue</div>
+          <div class="box" style="border-color:#EF9F27;background:#faeeda;color:#854f0b">Message Router</div>
+          <div class="box" style="border-color:#EF9F27;background:#faeeda;color:#854f0b">Allocation Policy</div>
+          <div class="box" style="border-color:#EF9F27;background:#faeeda;color:#854f0b">Leader Nudge</div>
+        </div>
+      </div>
+      <div class="arrow-down">&darr;</div>
+
+      <div class="layer" style="border-color:#85b7eb;background:#f5f9fe">
+        <div class="layer-label" style="color:#185fa5">Worker 层 &middot; Execution</div>
+        <div class="boxes">
+          <div class="box" style="border-color:#85b7eb;color:#185fa5">Worker Bootstrap</div>
+          <div class="box" style="border-color:#85b7eb;color:#185fa5">Runtime v2</div>
+          <div class="box" style="border-color:#85b7eb;color:#185fa5">Inbox / Outbox</div>
+          <div class="box" style="border-color:#85b7eb;color:#185fa5">Task Router</div>
+        </div>
+      </div>
+      <div class="arrow-down">&darr;</div>
+
+      <div class="layer" style="border-color:#97c459;background:#f6faf0">
+        <div class="layer-label" style="color:#3b6d11">隔离层 &middot; Isolation</div>
+        <div class="boxes">
+          <div class="box" style="border-color:#97c459;color:#3b6d11">Git Worktree (per worker)</div>
+          <div class="box" style="border-color:#97c459;color:#3b6d11">Merge Coordinator</div>
+          <div class="box" style="border-color:#97c459;color:#3b6d11">State Paths (distributed)</div>
+        </div>
+      </div>
+      <div class="arrow-down">&darr;</div>
+
+      <div class="layer" style="border-color:#c8c7be;background:#fafaf8">
+        <div class="layer-label" style="color:#5f5e5a">观测层 &middot; Observability</div>
+        <div class="boxes">
+          <div class="box" style="border-color:#c8c7be;color:#5f5e5a">Worker Health + Heartbeat</div>
+          <div class="box" style="border-color:#c8c7be;color:#5f5e5a">Activity Log</div>
+          <div class="box" style="border-color:#c8c7be;color:#5f5e5a">Audit Log</div>
+          <div class="box" style="border-color:#c8c7be;color:#5f5e5a">Team Status</div>
+          <div class="box" style="border-color:#c8c7be;color:#5f5e5a">Monitor</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sl">Team 模式运行流程</div>
+    <div class="step"><div class="sn">1</div><div class="sb"><strong>Worker Bootstrap</strong> — 创建 Git worktree（每个 Worker 独立目录），初始化状态文件</div></div>
+    <div class="step"><div class="sn">2</div><div class="sb"><strong>任务分发</strong> — Dispatch Queue 接收任务 &rarr; Message Router 按角色分配 &rarr; Allocation Policy 按能力 + 负载均衡</div></div>
+    <div class="step"><div class="sn">3</div><div class="sb"><strong>并行执行</strong> — 每个 Worker 获取任务切片，Heartbeat 监控存活，Activity Log 记录进度</div></div>
+    <div class="step"><div class="sn">4</div><div class="sb"><strong>阶段协调</strong> — Phase Controller 控制顺序阶段完成，Merge Coordinator 解决 Git 冲突</div></div>
+    <div class="step"><div class="sn">5</div><div class="sb"><strong>状态汇聚</strong> — Inbox/Outbox 分发状态更新 &rarr; 持久化到共享状态文件 &rarr; Team-Job Convergence 检查</div></div>
+    <div class="step"><div class="sn">6</div><div class="sb"><strong>完成</strong> — Audit Log 生成 &rarr; Status Report 编译 &rarr; 结果聚合</div></div>
+
+    <div class="sl">关键工程决策</div>
+    <div class="row">
+      <div class="gbox">
+        <strong>Git Worktree 隔离</strong><br>
+        每个 Worker 在独立的 worktree 中工作，避免文件冲突。合并时通过 Merge Coordinator 统一处理。<code>lib/worktree-paths.ts</code> (27.7KB) 处理各种边界情况。
+      </div>
+      <div class="gbox">
+        <strong>Heartbeat 存活检测</strong><br>
+        Worker 定期发送心跳。若心跳超时，系统判定 Worker 死亡，其任务重新分配给其他 Worker。防止死锁。
+      </div>
+    </div>
+    <div class="row">
+      <div class="obox">
+        <strong>Dispatch Queue + Allocation Policy</strong><br>
+        不是简单轮询，而是基于 Worker 能力和当前负载的智能分配。Agent 类型匹配 + 负载均衡。
+      </div>
+      <div class="obox">
+        <strong>Phase Controller</strong><br>
+        确保阶段之间的顺序一致性。Phase 1 的所有 Worker 完成后，才启动 Phase 2。防止依赖未就绪的竞态条件。
+      </div>
+    </div>
+
+    <div class="sl">安全架构</div>
+    <div class="callout-blue">
+      <strong>多层防御体系：</strong><br>
+      &middot; <strong>输入层</strong> — XML 标签转义 + Surrogate pair 校验 + 4000 字符截断<br>
+      &middot; <strong>Agent 层</strong> — 名称白名单（字母数字+连字符）+ 路径穿越检测 + 解析后路径校验<br>
+      &middot; <strong>MCP 层</strong> — Prompt injection 防护（<code>mcp/prompt-injection.ts</code>）+ Untrusted 内容标记<br>
+      &middot; <strong>配置层</strong> — Zod schema 校验 + 环境变量控制 + 文件锁并发保护<br>
+      &middot; <strong>隔离层</strong> — Per-worktree 状态隔离 + Team 模式用户隔离 + Session 边界
+    </div>
+  </div>
+
+  <div class="footer">AI 修炼册 &middot; bob798/ai-handbook &middot; OMC 工程架构拆解</div>
+</div>
+
+<script>
+var panels=document.querySelectorAll('.panel');
+var tabs=document.querySelectorAll('.tab');
+function show(i){
+  panels.forEach(function(p,j){p.classList.toggle('active',i===j)});
+  tabs.forEach(function(t,j){t.classList.toggle('active',i===j)});
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>

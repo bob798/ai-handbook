@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OMC 案例深度分析 · oh-my-claudecode</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", sans-serif;
+  background: #f5f4f0; color: #1a1a18; min-height: 100vh; padding: 0 0 60px;
+}
+.container { max-width: 820px; margin: 0 auto; padding: 28px 16px 0; }
+
+.top-nav {
+  background: #0c0f14; padding: 9px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+}
+.top-nav-left { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #bbb; }
+.top-nav-dot { width: 7px; height: 7px; border-radius: 50%; background: #EF9F27; display: inline-block; }
+.top-nav-badge {
+  font-size: 9px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: #EF9F27; background: rgba(239,159,39,.15); padding: 2px 8px;
+  border-radius: 10px; border: 1px solid rgba(239,159,39,.3);
+}
+.top-nav a { color: #888; font-size: 11px; text-decoration: none; }
+.top-nav a:hover { color: #ddd; }
+
+.header { margin-bottom: 24px; border-bottom: 0.5px solid #c8c7be; padding-bottom: 20px; }
+.header h1 { font-size: 24px; font-weight: 500; letter-spacing: -.3px; margin-bottom: 6px; }
+.header .tagline { font-size: 13px; color: #5f5e5a; line-height: 1.6; max-width: 620px; }
+.header .tagline strong { color: #EF9F27; }
+
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 24px; }
+.tab {
+  padding: 6px 11px; font-size: 11px; border-radius: 6px; cursor: pointer;
+  color: #5f5e5a; border: 0.5px solid #c8c7be; background: #fff;
+  transition: all .15s; white-space: nowrap;
+}
+.tab.active { color: #fff; background: #EF9F27; border-color: #EF9F27; font-weight: 500; }
+.tab:hover:not(.active) { background: #ece9e2; }
+.tab.check { border-color: #059669; color: #059669; }
+.tab.check.active { background: #059669; border-color: #059669; color: #fff; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.sl {
+  font-size: 10px; font-weight: 500; letter-spacing: .08em;
+  text-transform: uppercase; color: #888780; margin: 18px 0 9px;
+}
+.sl:first-child { margin-top: 0; }
+
+/* Lens badges */
+.lens {
+  display: inline-block; font-size: 9px; font-weight: 600; padding: 1px 7px;
+  border-radius: 10px; letter-spacing: .04em; vertical-align: middle; margin-left: 4px;
+}
+.lens-dev { background: #eaf3de; color: #3b6d11; border: .5px solid #97c459; }
+.lens-team { background: #e6f1fb; color: #185fa5; border: .5px solid #85b7eb; }
+.lens-eng { background: #faeeda; color: #854f0b; border: .5px solid #EF9F27; }
+
+/* Callouts */
+.callout {
+  padding: 10px 14px; background: #fff; border-radius: 0 8px 8px 0;
+  margin: 10px 0; font-size: 13px; color: #444441; line-height: 1.7;
+  border: 0.5px solid #e8e3da; border-left: 3px solid #EF9F27;
+}
+.callout strong { color: #1a1a18; }
+.callout-blue {
+  padding: 10px 14px; border-radius: 0 8px 8px 0;
+  margin: 10px 0; font-size: 13px; line-height: 1.7;
+  background: #e6f1fb; color: #042c53;
+  border: 0.5px solid #b5d4f4; border-left: 3px solid #3b8bd4;
+}
+.callout-blue strong { color: #0c447c; }
+.callout-green {
+  padding: 10px 14px; border-radius: 0 8px 8px 0;
+  margin: 10px 0; font-size: 13px; line-height: 1.7;
+  background: #ecfdf5; color: #064e3b;
+  border: 0.5px solid #6ee7b7; border-left: 3px solid #059669;
+}
+.callout-green strong { color: #065f46; }
+.callout-red {
+  padding: 10px 14px; border-radius: 0 8px 8px 0;
+  margin: 10px 0; font-size: 13px; line-height: 1.7;
+  background: #fcebeb; color: #501313;
+  border: 0.5px solid #f09595; border-left: 3px solid #e53e3e;
+}
+.callout-red strong { color: #7f1d1d; }
+
+/* Cards */
+.card {
+  background: #fff; border-radius: 10px; padding: 14px 16px;
+  margin-bottom: 10px; border: 0.5px solid #dedad4;
+}
+.card-t { font-size: 13px; font-weight: 500; color: #1a1a18; margin-bottom: 5px; }
+.card-b { font-size: 12px; color: #5f5e5a; line-height: 1.75; }
+
+/* Method box */
+.mbox {
+  background: linear-gradient(135deg, #fffcf5 0%, #fff 100%);
+  border: 1px solid #f5c5a0; border-radius: 10px; padding: 14px 16px; margin: 12px 0;
+}
+.mbox-label { font-size: 9px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #EF9F27; margin-bottom: 5px; }
+.mbox-title { font-size: 14px; font-weight: 500; color: #1a1a18; margin-bottom: 6px; }
+.mbox-body { font-size: 12px; color: #5f5e5a; line-height: 1.75; }
+
+/* Colored boxes */
+.gbox { border-radius: 8px; padding: 12px 14px; font-size: 12px; line-height: 1.7; border: 0.5px solid #97c459; background: #eaf3de; color: #173404; }
+.rbox { border-radius: 8px; padding: 12px 14px; font-size: 12px; line-height: 1.7; border: 0.5px solid #f09595; background: #fcebeb; color: #501313; }
+.obox { border-radius: 8px; padding: 12px 14px; font-size: 12px; line-height: 1.7; border: 0.5px solid #EF9F27; background: #faeeda; color: #412402; }
+
+/* Layout */
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 10px 0; }
+@media (max-width: 580px) { .row,.row3 { grid-template-columns: 1fr; } }
+
+/* Steps */
+.step { display: flex; gap: 10px; margin-bottom: 9px; align-items: flex-start; }
+.sn {
+  width: 24px; height: 24px; border-radius: 50%; background: #EF9F27;
+  color: #fff; font-size: 11px; font-weight: 500;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+}
+.sb { flex: 1; font-size: 13px; color: #444441; line-height: 1.65; }
+.sb strong { color: #1a1a18; }
+
+/* Table */
+table { border-collapse: collapse; width: 100%; font-size: 12px; margin: 8px 0; }
+th { background: #f5f4f0; padding: 8px 10px; text-align: left; font-weight: 500; border: 0.5px solid #dedad4; color: #1a1a18; }
+td { padding: 8px 10px; border: 0.5px solid #dedad4; color: #5f5e5a; line-height: 1.5; vertical-align: top; }
+td strong { color: #1a1a18; }
+
+.sep { border: none; border-top: 0.5px solid #dedad4; margin: 16px 0; }
+
+/* Quiz */
+.quiz-q { margin-bottom: 16px; }
+.quiz-stem {
+  font-size: 13px; font-weight: 500; color: #1a1a18; margin-bottom: 8px;
+  padding: 10px 14px; background: #faeeda; border-radius: 8px 8px 0 0; border: .5px solid #EF9F27;
+}
+.quiz-opts { list-style: none; }
+.quiz-opts li {
+  padding: 8px 14px; font-size: 12px; color: #5f5e5a; cursor: pointer;
+  border: .5px solid #dedad4; border-top: none; background: #fff;
+  transition: background .12s; line-height: 1.6;
+}
+.quiz-opts li:last-child { border-radius: 0 0 8px 8px; }
+.quiz-opts li:hover { background: #f5f4f0; }
+.quiz-opts li.correct { background: #eaf3de; color: #173404; border-color: #97c459; }
+.quiz-opts li.wrong { background: #fcebeb; color: #501313; border-color: #f09595; }
+.quiz-opts li.disabled { pointer-events: none; }
+.quiz-exp {
+  display: none; padding: 8px 14px; font-size: 11px; color: #5f5e5a;
+  background: #f5f4f0; border: .5px solid #dedad4; border-top: none;
+  border-radius: 0 0 8px 8px; line-height: 1.7;
+}
+.quiz-exp.show { display: block; }
+.quiz-score {
+  text-align: center; padding: 20px; background: #fff; border-radius: 10px;
+  border: .5px solid #dedad4; margin: 16px 0;
+}
+.quiz-score .big { font-size: 32px; font-weight: 500; color: #EF9F27; }
+.quiz-score .label { font-size: 12px; color: #888780; margin-top: 4px; }
+
+.footer { text-align: center; padding: 32px 16px 0; font-size: 11px; color: #c8c7be; }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="top-nav-left">
+    <span class="top-nav-dot"></span>
+    <span>AI 修炼册</span>
+    <span class="top-nav-badge">L4 案例分析</span>
+  </div>
+  <a href="ai-xiulian-ce.html">&larr; 返回修炼路径</a>
+</nav>
+
+<div class="container">
+  <div class="header">
+    <h1>oh-my-claudecode 深度拆解</h1>
+    <p class="tagline">从一个 <strong>26k+ stars</strong> 的多 Agent 编排框架中，学习 AI 系统的架构决策、协作机制和工程纪律。内容标注三种视角：<span class="lens lens-dev">开发</span> <span class="lens lens-team">协同</span> <span class="lens lens-eng">工程</span></p>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="show(0)">&#x1F5FA; 全景</div>
+    <div class="tab" onclick="show(1)">&nbsp;&#x2460; 架构解剖</div>
+    <div class="tab" onclick="show(2)">&nbsp;&#x2461; 协作机制</div>
+    <div class="tab" onclick="show(3)">&nbsp;&#x2462; 工程纪律</div>
+    <div class="tab" onclick="show(4)">&nbsp;&#x2463; 误解雷达</div>
+    <div class="tab" onclick="show(5)">&nbsp;&#x2464; 实战迁移</div>
+    <div class="tab check" onclick="show(6)">&nbsp;&#x2705; 理解验证</div>
+  </div>
+
+  <!-- ══════ Tab 0: 全景 ══════ -->
+  <div class="panel active" id="p0">
+    <div class="callout">
+      <strong>核心论点：</strong>OMC 证明了一个关键洞察 —— <strong>Agent 系统本质是软件架构问题，不是 AI 问题。</strong>模型能力是基座，但系统能力来自编排、分工和工程纪律。19 个专精 Agent 协作的效果，远超 1 个通用 Agent 的独白。
+    </div>
+
+    <div class="sl">项目概览</div>
+    <div class="card">
+      <div class="card-t">oh-my-claudecode（OMC）</div>
+      <div class="card-b">
+        GitHub 26k+ stars &middot; Claude Code 多 Agent 编排框架 &middot; TypeScript &middot; MIT<br>
+        <strong>19+ 专业 Agent</strong>（构建 / 分析 / 审核 / 领域专家 / 产品 五大通道）<br>
+        <strong>4 种执行模式</strong>（Team / Autopilot / Ralph / Ultrawork）<br>
+        <strong>Skill 系统</strong>：自动从问题解决过程中提取可复用能力<br>
+        <strong>HUD 仪表盘</strong>：实时 Agent 状态、Token 消耗、编排进度<br>
+        <strong>智能模型路由</strong>：Haiku / Sonnet / Opus 按任务复杂度分流，省 30-50% Token
+      </div>
+    </div>
+
+    <div class="sl">D3 类比 &middot; 电影剧组模型</div>
+    <div class="obox">
+      OMC 不是一个「超级 AI」，而是一个<strong>电影剧组</strong>：<br>
+      &middot; <strong>导演</strong>（Planner Agent）—— 拆解任务、分配角色、把控节奏<br>
+      &middot; <strong>摄影 / 灯光 / 美术</strong>（Domain Agents）—— 各司其职的专业执行者<br>
+      &middot; <strong>剪辑师</strong>（Review Agents）—— 独立审核，不是拍摄者自己剪片<br>
+      &middot; <strong>场记</strong>（HUD + Git Trailers）—— 记录每个决策，下一场能接上<br>
+      关键洞察：好电影不靠单一天才，靠的是<strong>专业分工 + 流程纪律</strong>。
+    </div>
+
+    <div class="sl">三种视角标签说明</div>
+    <div class="callout-blue">
+      本文内容按<strong>学习层次递进</strong>组织（架构 → 协作 → 工程 → 误解 → 实战），而非按视角分割。每个知识点只出现一次，用彩色标签标注它与哪些视角相关：<br>
+      <span class="lens lens-dev">开发</span> AI 开发项目角度 — 架构设计、设计模式、可扩展性<br>
+      <span class="lens lens-team">协同</span> AI 团队协同角度 — 团队流程、知识传递、协作纪律<br>
+      <span class="lens lens-eng">工程</span> AI 工程角度 — 可靠性、成本控制、可观测性<br>
+      OMC 处于 <strong>L4 金丹境</strong>和 <strong>L5 元婴境</strong>的交汇处。学它不是学命令，而是学<strong>架构决策背后的 why</strong>。
+    </div>
+  </div>
+
+  <!-- ══════ Tab 1: 架构解剖 ══════ -->
+  <div class="panel" id="p1">
+    <div class="sl">系统分层 <span class="lens lens-dev">开发</span></div>
+    <table>
+      <tr><th>层次</th><th>职责</th><th>关键组件</th></tr>
+      <tr><td><strong>编排层</strong></td><td>任务拆解与执行策略选择</td><td>Team / Autopilot / Ralph / Ultrawork</td></tr>
+      <tr><td><strong>Agent 层</strong></td><td>专业化任务执行</td><td>19+ Agent，五大通道</td></tr>
+      <tr><td><strong>Skill 层</strong></td><td>可复用能力管理</td><td>自动提取 + 项目/用户两级作用域</td></tr>
+      <tr><td><strong>基础设施层</strong></td><td>监控、成本、版本</td><td>HUD / Git Trailers / 模型路由 / Rate Limit 自恢复</td></tr>
+    </table>
+
+    <div class="sl">五大 Agent 通道 — 为什么这么分？ <span class="lens lens-dev">开发</span> <span class="lens lens-team">协同</span></div>
+    <div class="callout">
+      OMC 的 19+ Agent 不是随意堆砌，而是按<strong>软件开发生命周期</strong>分为五个通道。每个通道对应开发中的一个「职能部门」，通道之间有明确的输入输出契约。这不是 AI 的创新，而是<strong>经典软件工程组织理论</strong>在 Agent 系统中的复现。
+    </div>
+    <table>
+      <tr><th>通道</th><th>Agent 角色</th><th>职能类比</th></tr>
+      <tr><td><strong>构建通道</strong></td><td>explore, planner, architect, executor</td><td>产品 → 设计 → 开发</td></tr>
+      <tr><td><strong>分析通道</strong></td><td>analyst, debugger, researcher</td><td>技术调研 &amp; 问题诊断</td></tr>
+      <tr><td><strong>审核通道</strong></td><td>style / code / api / security / perf reviewer</td><td>独立 QA 部门</td></tr>
+      <tr><td><strong>领域通道</strong></td><td>dependency-expert, test-engineer, git-master</td><td>专项技术专家</td></tr>
+      <tr><td><strong>产品通道</strong></td><td>product-manager, ux-researcher, info-architect</td><td>产品 &amp; 用户研究</td></tr>
+    </table>
+
+    <div class="sl">设计模式识别 <span class="lens lens-dev">开发</span></div>
+    <div class="row">
+      <div class="card">
+        <div class="card-t">关注点分离</div>
+        <div class="card-b">创作 Agent 和审核 Agent <strong>永远不是同一个角色</strong>。这是刻意设计 —— 防止「自己审自己」的确认偏误。就像代码作者不能自己通过 Code Review。</div>
+      </div>
+      <div class="card">
+        <div class="card-t">策略模式</div>
+        <div class="card-b">4 种执行模式是<strong>可互换的编排策略</strong>。同一个任务可以用 Team 模式协作，也可以切 Autopilot 自主执行。策略取决于<strong>任务确定性</strong>，不取决于任务类型。</div>
+      </div>
+      <div class="card">
+        <div class="card-t">插件架构</div>
+        <div class="card-b">Skill 系统是<strong>运行时可扩展的能力注入</strong>。新能力不改核心代码，只添加 Skill 定义。社区贡献和自动提取的 Skill 用同一套机制。</div>
+      </div>
+      <div class="card">
+        <div class="card-t">观察者模式</div>
+        <div class="card-b">HUD 仪表盘是<strong>被动监控</strong>，观察 Agent 状态但不干预执行。拔掉 HUD，系统照常运转 —— 可观测性不引入耦合。</div>
+      </div>
+    </div>
+
+    <div class="sl">架构级团队契约 <span class="lens lens-team">协同</span> <span class="lens lens-dev">开发</span></div>
+    <div class="mbox">
+      <div class="mbox-label">关键架构决策</div>
+      <div class="mbox-title">CLAUDE.md 不只是配置文件</div>
+      <div class="mbox-body">
+        共享的 CLAUDE.md 是团队的<strong>编码规范 + 架构决策 + 行为约束</strong>的单一事实来源。新成员（人类或 Agent）读完它就知道「这里怎么做事」。<br><br>
+        这是一个<strong>架构决策</strong>，不只是团队协作工具 —— 它决定了 Agent 的行为边界和质量基线。没有它，19 个 Agent 各行其是；有了它，19 个 Agent 像同一个团队。
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ Tab 2: 协作机制 ══════ -->
+  <div class="panel" id="p2">
+    <div class="sl">四种执行模式 <span class="lens lens-team">协同</span> <span class="lens lens-dev">开发</span></div>
+    <table>
+      <tr><th>模式</th><th>工作方式</th><th>团队类比</th><th>适用场景</th></tr>
+      <tr><td><strong>Team</strong></td><td>多 Agent 管线式协作</td><td>结对编程 Driver/Navigator</td><td>复杂功能，需要实时协调</td></tr>
+      <tr><td><strong>Autopilot</strong></td><td>自主执行 + 定期汇报</td><td>自主开发 + 定期 Standup</td><td>需求明确、验收标准清晰</td></tr>
+      <tr><td><strong>Ralph</strong></td><td>持久执行 + 验证循环</td><td>导师带教 + Tech Lead Review</td><td>高风险变更、学习场景</td></tr>
+      <tr><td><strong>Ultrawork</strong></td><td>并行处理独立任务</td><td>多个独立冲刺小队</td><td>大批量无依赖的工作流</td></tr>
+    </table>
+
+    <div class="sl">审核分离：创作 ≠ 审核 <span class="lens lens-team">协同</span> <span class="lens lens-dev">开发</span></div>
+    <div class="card">
+      <div class="card-t">为什么 OMC 强制分离创作和审核角色？</div>
+      <div class="card-b">
+        即使是独立开发者，OMC 也<strong>绝不允许创作 Agent 审核自己的输出</strong>。这不是流程开销 —— 这是质量保障的底线。<br><br>
+        <strong>原理</strong>：确认偏误（Confirmation Bias）是人类和 LLM 共有的弱点。写代码的人（或 Agent）天然倾向于认为自己的代码是对的。换一个视角（独立审核 Agent），才能发现盲区。<br><br>
+        <strong>工程实现</strong>：executor 完成编码后，输出交给 code-reviewer / security-reviewer，它们从未参与创作过程，带着「挑毛病」的 System Prompt 工作。
+      </div>
+    </div>
+
+    <div class="sl">Git Trailers：异步协作的决策链 <span class="lens lens-team">协同</span> <span class="lens lens-eng">工程</span></div>
+    <div class="card">
+      <div class="card-t">为什么 Commit Message 不够？</div>
+      <div class="card-b">
+        Commit Message 记录<strong>做了什么</strong>，但异步协作的真正痛点是<strong>为什么这么做</strong>。<br><br>
+        OMC 在每次 Commit 附带结构化 Trailer：约束条件、被拒绝的方案、置信度评分。这样下一个接手的人（人类或 Agent）不需要猜测前任的意图 —— 决策理由就在代码旁边。<br><br>
+        <strong>类比</strong>：病历本不只记录「开了什么药」，还记录「为什么排除了其他方案」，留给下一班医生看。
+      </div>
+    </div>
+
+    <div class="sl">Skill 自动提取：一人解题 → 团队能力 <span class="lens lens-team">协同</span> <span class="lens lens-dev">开发</span></div>
+    <div class="card">
+      <div class="card-t">为什么不用人工总结最佳实践？</div>
+      <div class="card-b">
+        OMC 从问题解决过程中<strong>自动提取</strong> Skill，不依赖人工总结。一个工程师解决了数据库迁移难题，Skill 自动提取后，全团队遇到类似问题都有现成方案。<br><br>
+        <strong>关键区分</strong>：这不是知识管理（存文档），而是<strong>能力沉淀</strong>（存可执行的方案）。团队成员甚至不需要知道某个 Skill 存在 —— 编排层会在合适时机自动调用。
+      </div>
+    </div>
+
+    <div class="sl">D3 类比 &middot; 医院协作模型</div>
+    <div class="obox">
+      OMC 的协同模式像一家<strong>运转良好的医院</strong>：<br>
+      &middot; 外科医生（创作 Agent）做手术，但<strong>不自签手术报告</strong> —— 必须由主治医师（审核 Agent）独立复核<br>
+      &middot; 病历本（Git Trailers）记录每个决策和用药理由，<strong>留给下一班医生</strong>看<br>
+      &middot; 科室会诊（Team 模式）处理复杂病例；门诊（Autopilot）处理常规病症<br>
+      &middot; 护士长（HUD）监控所有病房状态，但不干预具体治疗方案
+    </div>
+
+    <div class="sl">Human-in-the-Loop <span class="lens lens-team">协同</span> <span class="lens lens-eng">工程</span></div>
+    <div class="callout-blue">
+      OMC 的 human-in-the-loop 不是可选项，而是<strong>核心设计</strong>。当系统对输出的置信度低于阈值时，强制人工介入 —— 这是系统安全的最后一道防线。<br><br>
+      <strong>设计智慧</strong>：不是「AI 做不了的才找人」，而是「AI 不确定的必须找人」。这个区分很微妙但极其重要。
+    </div>
+  </div>
+
+  <!-- ══════ Tab 3: 工程纪律 ══════ -->
+  <div class="panel" id="p3">
+    <div class="sl">模型路由：核心工程创新 <span class="lens lens-eng">工程</span></div>
+    <div class="callout">
+      <strong>智能模型路由 = 30-50% Token 成本节省</strong><br>
+      OMC 不是「全用最贵的模型」，而是按任务复杂度智能分流：<br>
+      &middot; <strong>Haiku</strong> &rarr; 分类、分诊、简单格式化（快且便宜）<br>
+      &middot; <strong>Sonnet</strong> &rarr; 标准编码、文档生成、常规分析（性价比最优）<br>
+      &middot; <strong>Opus</strong> &rarr; 复杂推理、架构决策、跨文件重构（贵但值得）<br>
+      路由决策由编排层自动完成，开发者无需手动选模型。
+    </div>
+
+    <div class="sl">D3 类比 &middot; 医院分诊系统</div>
+    <div class="obox">
+      模型路由就像<strong>医院分诊</strong>：<br>
+      &middot; <strong>护士</strong>（Haiku）—— 挂号分诊，判断病情紧急程度，3 秒完成<br>
+      &middot; <strong>全科医生</strong>（Sonnet）—— 处理 80% 的常规病例，能力够用且高效<br>
+      &middot; <strong>专科主任</strong>（Opus）—— 只接疑难杂症，不浪费在感冒发烧上<br>
+      <strong>关键：不是所有病人都需要找主任。</strong>过度使用 Opus 不会提升质量，只会增加等待和费用。
+    </div>
+
+    <div class="sl">可观测性三支柱 <span class="lens lens-eng">工程</span></div>
+    <div class="row">
+      <div class="card">
+        <div class="card-t">HUD 实时状态</div>
+        <div class="card-b">Agent 名称、当前模式、Token 消耗、任务进度，一屏可见。像驾驶舱仪表盘 —— 不需要时不看，出问题时救命。</div>
+      </div>
+      <div class="card">
+        <div class="card-t">Git Trailers 决策溯源</div>
+        <div class="card-b">每个 Commit 记录约束条件、被拒方案、置信度，形成决策链。事后复盘不靠记忆，靠数据。</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-t">结构化日志</div>
+      <div class="card-b">按 Agent 角色分类，可按时间 / 角色 / 任务粒度过滤。当 5 个 Agent 串联执行出了问题，日志告诉你<strong>断在哪一步</strong>。</div>
+    </div>
+
+    <div class="sl">质量控制流水线 <span class="lens lens-eng">工程</span> <span class="lens lens-dev">开发</span></div>
+    <div class="step"><div class="sn">1</div><div class="sb"><strong>创作 Agent 生产输出</strong> —— executor / architect 完成编码或设计</div></div>
+    <div class="step"><div class="sn">2</div><div class="sb"><strong>独立审核 Agent 评估</strong> —— code-reviewer / security-reviewer 独立检查（永远不是同一个 Agent）</div></div>
+    <div class="step"><div class="sn">3</div><div class="sb"><strong>置信度评分</strong> —— 系统输出置信度分数，低于阈值触发人工升级</div></div>
+    <div class="step"><div class="sn">4</div><div class="sb"><strong>Git Trailer 归档</strong> —— 决策链完整记录：做了什么、为什么、拒绝了什么、谁审核的</div></div>
+
+    <div class="sl">生产风险警示 <span class="lens lens-eng">工程</span></div>
+    <div class="callout-red">
+      <strong>多 Agent 系统的三大生产风险：</strong><br>
+      <strong>1. Rate Limit 级联</strong> —— 一个 Agent 触发限流，下游全部阻塞。OMC 用 auto-resume 缓解，但不能完全避免。<br>
+      <strong>2. Session 状态恢复</strong> —— Agent 中途崩溃，如何断点续跑？Ralph 模式部分解决了这个问题。<br>
+      <strong>3. Agent 死循环</strong> —— 两个 Agent 互相触发无限循环。需要<strong>最大迭代次数 + 超时熔断</strong>。
+    </div>
+  </div>
+
+  <!-- ══════ Tab 4: 误解雷达 ══════ -->
+  <div class="panel" id="p4">
+    <div class="callout-blue">
+      以下 6 个常见误解来自对 OMC 的表面理解。每个都附带视角标签，帮你判断它与哪些工作场景相关。
+    </div>
+
+    <div class="sl">Agent 设计误解 <span class="lens lens-dev">开发</span></div>
+    <div class="row">
+      <div class="rbox">
+        <strong>&#x2717; Agent 越多越好</strong><br>
+        OMC 有 19 个 Agent，但每个都有清晰边界。盲目增加 Agent 只会增加通信开销和冲突概率。<strong>角色清晰度比数量重要得多。</strong>
+      </div>
+      <div class="rbox">
+        <strong>&#x2717; Agent 应该通用化</strong><br>
+        OMC 的 Agent 刻意窄化专精 —— security-reviewer 只看安全，不碰功能逻辑。<strong>窄化 = 高质量</strong>，通用化 = 什么都不精。
+      </div>
+    </div>
+
+    <div class="sl">团队协作误解 <span class="lens lens-team">协同</span></div>
+    <div class="row">
+      <div class="rbox">
+        <strong>&#x2717; AI 团队工具替代人类判断</strong><br>
+        OMC 的 human-in-the-loop 是<strong>核心设计而非可选项</strong>。置信度低于阈值时强制人工介入 —— 这是系统安全的最后一道防线，不是效率的妥协。
+      </div>
+      <div class="rbox">
+        <strong>&#x2717; 共享 Skill = 共享上下文</strong><br>
+        Skill 传递的是<strong>能力</strong>（how to），CLAUDE.md 传递的是<strong>上下文</strong>（why &amp; what）。新成员有 Skill 但没读 CLAUDE.md，照样会做出错误决策。
+      </div>
+    </div>
+
+    <div class="sl">工程实践误解 <span class="lens lens-eng">工程</span></div>
+    <div class="row">
+      <div class="rbox">
+        <strong>&#x2717; 永远用最好的模型</strong><br>
+        OMC 的实践证明：智能路由<strong>既更便宜又更快</strong>。Haiku 处理分类任务的速度是 Opus 的 10 倍+，准确率几乎相同。
+      </div>
+      <div class="rbox">
+        <strong>&#x2717; 可观测性是锦上添花</strong><br>
+        没有 HUD 级的实时可见性，多 Agent 系统就是<strong>无法调试的黑盒</strong>。5 个 Agent 串联执行，问题可能在任何环节 —— 没有可观测性只能盲猜。
+      </div>
+    </div>
+
+    <hr class="sep">
+    <div class="callout-green">
+      <strong>元模式 —— 这些误解的共性是什么？</strong><br>
+      所有 6 个误解都犯了同一个错误：<strong>用「量」替代「结构」</strong>。更多 Agent、更通用的 Agent、更贵的模型、更多自动化 —— 这些都是「量」的思维。而 OMC 的核心设计理念恰恰相反：<strong>用精确的结构（角色边界、路由规则、审核纪律）替代粗暴的堆砌。</strong>
+    </div>
+  </div>
+
+  <!-- ══════ Tab 5: 实战迁移 ══════ -->
+  <div class="panel" id="p5">
+    <div class="sl">映射 &middot; 音曼客服三角色 <span class="lens lens-team">协同</span></div>
+    <div class="callout-blue">
+      <strong>音曼客服三角色（接待 / 专家 / 验收）</strong>完美映射 OMC 的协作模式：<br>
+      &middot; 接待 Agent &rarr; OMC 的 <strong>Triage / Router</strong>（分诊，识别意图后路由）<br>
+      &middot; 专家 Agent &rarr; OMC 的 <strong>Domain Expert</strong>（窄化专精，只处理专业问题）<br>
+      &middot; 验收 Agent &rarr; OMC 的 <strong>Review Agent</strong>（独立审核答复质量，防止幻觉输出）<br>
+      好的多 Agent 架构殊途同归：<strong>分工专精 + 独立审核 + 决策可溯</strong>。
+    </div>
+
+    <div class="sl">映射 &middot; RAG 系统成本优化 <span class="lens lens-eng">工程</span></div>
+    <div class="callout-green">
+      <strong>OMC 模型路由模式可直接应用于 RAG 知识库：</strong><br>
+      &middot; 查询分类（Haiku）&rarr; 判断是简单事实查询还是复杂推理问题<br>
+      &middot; 简单检索 + 回答（Sonnet）&rarr; 80% 的常见问题<br>
+      &middot; 多文档综合推理（Opus）&rarr; 需要跨知识源的复杂分析<br>
+      在 RAG 课程 v4+ 阶段可以引入这套路由机制做成本优化实验。
+    </div>
+
+    <div class="sl">清单 &middot; 设计你自己的多 Agent 系统 <span class="lens lens-dev">开发</span></div>
+    <div class="step"><div class="sn">1</div><div class="sb"><strong>定义角色边界</strong> —— 每个 Agent 负责什么、不负责什么？边界越清晰，冲突越少</div></div>
+    <div class="step"><div class="sn">2</div><div class="sb"><strong>分离创作与审核</strong> —— 永远不让同一个 Agent 生产并审核自己的输出</div></div>
+    <div class="step"><div class="sn">3</div><div class="sb"><strong>选择编排策略</strong> —— 你的任务确定性高（Autopilot）还是低（Team）？有学习需求（Ralph）还是并行需求（Ultrawork）？</div></div>
+    <div class="step"><div class="sn">4</div><div class="sb"><strong>写好 CLAUDE.md</strong> —— 这是你的团队契约，决定所有 Agent 的行为基线</div></div>
+    <div class="step"><div class="sn">5</div><div class="sb"><strong>加入可观测性</strong> —— 至少要有：当前状态可见 + 决策可溯源 + 错误可定位</div></div>
+    <div class="step"><div class="sn">6</div><div class="sb"><strong>设置安全边界</strong> —— 置信度阈值 + 最大迭代次数 + 超时熔断</div></div>
+
+    <div class="sl">迁移对照表</div>
+    <table>
+      <tr><th>OMC 模式</th><th>你的项目等价物</th></tr>
+      <tr><td>19 Agent 五大通道</td><td>按你的业务流程划分角色，不求多但求边界清晰</td></tr>
+      <tr><td>审核 Agent 分离</td><td>RAG 答复生成后加一个独立验证步骤</td></tr>
+      <tr><td>模型路由 Haiku/Sonnet/Opus</td><td>查询分类用小模型，复杂推理用大模型</td></tr>
+      <tr><td>CLAUDE.md 团队契约</td><td>项目根目录的上下文文件，定义规范和边界</td></tr>
+      <tr><td>Skill 自动提取</td><td>解决一个难题后，把方案模板化供复用</td></tr>
+      <tr><td>Git Trailers 决策链</td><td>在日志或注释中记录「为什么选了方案 A 而非 B」</td></tr>
+      <tr><td>HUD 仪表盘</td><td>打印关键状态到控制台 / 接入 LangFuse 看 Trace</td></tr>
+    </table>
+
+    <hr class="sep">
+    <div class="rbox">
+      <strong>什么时候不该用多 Agent？</strong><br>
+      如果你的任务用单个 Agent + 好 Prompt 就能完成，<strong>不要上多 Agent</strong>。多 Agent 的编排、通信、调试成本远高于单 Agent。OMC 适合的是<strong>复杂度超过单 Agent 能力边界</strong>的场景 —— 别用大炮打蚊子。
+    </div>
+  </div>
+
+  <!-- ══════ Tab 6: 理解验证 ══════ -->
+  <div class="panel" id="p6">
+    <div class="callout-blue">
+      6 道选择题，覆盖三种视角。做完后会显示得分和评级。答案选择后不可更改。
+    </div>
+
+    <div id="quiz-area"></div>
+    <div class="quiz-score" id="quiz-result" style="display:none">
+      <div class="big" id="quiz-num">0/6</div>
+      <div class="label" id="quiz-level"></div>
+    </div>
+  </div>
+
+  <div class="footer">AI 修炼册 &middot; bob798/ai-handbook &middot; OMC 案例深度分析</div>
+</div>
+
+<script>
+/* ── Tab switching ── */
+var panels = document.querySelectorAll('.panel');
+var tabs = document.querySelectorAll('.tab');
+function show(i) {
+  panels.forEach(function(p,j){ p.classList.toggle('active', i===j); });
+  tabs.forEach(function(t,j){ t.classList.toggle('active', i===j); });
+  window.scrollTo(0, 0);
+}
+
+/* ── Quiz ── */
+var QZ = [
+  {
+    q: 'OMC 的 security-reviewer Agent 为什么不能同时负责功能逻辑审核？',
+    opts: ['因为它能力不够', '因为关注点分离 —— 防止确认偏误，每个 Agent 只审一个维度', '因为运行太慢', '因为 Token 成本太高'],
+    ans: 1,
+    exp: '关注点分离是 OMC 的核心设计原则。窄化专精不是能力限制，而是质量保障 —— 每个审核 Agent 带着不同的「挑毛病视角」工作。',
+    lens: 'dev'
+  },
+  {
+    q: 'CLAUDE.md 和 Skill 系统分别传递什么？',
+    opts: ['都传递能力', 'CLAUDE.md 传递上下文（why/what），Skill 传递能力（how）', 'CLAUDE.md 传递代码，Skill 传递文档', 'Skill 比 CLAUDE.md 更重要'],
+    ans: 1,
+    exp: '这是协同视角最容易混淆的概念。CLAUDE.md 定义「做事的规矩和背景」，Skill 定义「怎么做某件具体的事」。二者缺一不可。',
+    lens: 'team'
+  },
+  {
+    q: '什么情况下应该让 Opus 处理简单的分类任务？',
+    opts: ['当预算充足时', '当需要最高准确率时', '永远不应该 —— Haiku 处理分类更快且准确率相当', '当任务很紧急时'],
+    ans: 2,
+    exp: '这是模型路由的核心思想。Haiku 处理分类任务速度是 Opus 的 10 倍+，准确率几乎相同。过度使用 Opus 是浪费，不是保障。',
+    lens: 'eng'
+  },
+  {
+    q: 'Ralph 模式最适合下列哪种场景？',
+    opts: ['大批量无依赖的并行任务', '需求明确的独立开发', '高风险变更 + 需要持续验证循环的场景', '简单的代码格式化'],
+    ans: 2,
+    exp: 'Ralph 模式的特点是持久执行 + 验证循环，类似 Tech Lead 不断 Review 的工作方式。适合学习场景和高风险变更。Ultrawork 适合并行，Autopilot 适合独立开发。',
+    lens: 'team'
+  },
+  {
+    q: 'OMC 的 human-in-the-loop 机制何时触发？',
+    opts: ['每次任务完成后', '只在出错时', '当置信度低于阈值时', '从不触发，完全自动化'],
+    ans: 2,
+    exp: '置信度阈值是 OMC 的安全防线。不是「做不了才找人」，而是「不确定时必须找人」。这个区分决定了系统的安全性。',
+    lens: 'eng'
+  },
+  {
+    q: '以下哪个最能概括 OMC 所有设计决策的共性？',
+    opts: ['用更多的 Agent 解决更多问题', '用精确的结构替代粗暴的堆砌', '用最贵的模型保证质量', '尽量减少人工干预'],
+    ans: 1,
+    exp: '这是误解雷达 Tab 的元模式：所有 6 个常见误解都犯了「用量替代结构」的错误。OMC 的核心理念恰恰相反 —— 用角色边界、路由规则、审核纪律这些「结构」来保证质量。',
+    lens: 'dev'
+  }
+];
+
+var score = 0, answered = 0;
+var KEY = 'omc-quiz-v1';
+
+function initQuiz() {
+  var saved = null;
+  try { saved = JSON.parse(localStorage.getItem(KEY)); } catch(e) {}
+  var area = document.getElementById('quiz-area');
+  area.innerHTML = '';
+
+  QZ.forEach(function(q, qi) {
+    var div = document.createElement('div');
+    div.className = 'quiz-q';
+    var lensClass = 'lens-' + q.lens;
+    var lensLabel = q.lens === 'dev' ? '开发' : q.lens === 'team' ? '协同' : '工程';
+    var html = '<div class="quiz-stem">Q' + (qi+1) + '. ' + q.q + ' <span class="lens ' + lensClass + '">' + lensLabel + '</span></div>';
+    html += '<ul class="quiz-opts" id="qo-' + qi + '">';
+    q.opts.forEach(function(o, oi) {
+      html += '<li onclick="pick(' + qi + ',' + oi + ')">' + String.fromCharCode(65+oi) + '. ' + o + '</li>';
+    });
+    html += '</ul>';
+    html += '<div class="quiz-exp" id="qe-' + qi + '">' + q.exp + '</div>';
+    div.innerHTML = html;
+    area.appendChild(div);
+
+    if (saved && saved[qi] !== undefined) {
+      applyAnswer(qi, saved[qi], true);
+    }
+  });
+
+  if (saved) { updateScore(); }
+}
+
+function pick(qi, oi) {
+  if (document.querySelectorAll('#qo-' + qi + ' li.disabled').length > 0) return;
+  applyAnswer(qi, oi, false);
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+  saved[qi] = oi;
+  localStorage.setItem(KEY, JSON.stringify(saved));
+  updateScore();
+}
+
+function applyAnswer(qi, oi, isRestore) {
+  var lis = document.querySelectorAll('#qo-' + qi + ' li');
+  lis.forEach(function(li, j) {
+    li.classList.add('disabled');
+    if (j === QZ[qi].ans) li.classList.add('correct');
+    if (j === oi && oi !== QZ[qi].ans) li.classList.add('wrong');
+  });
+  document.getElementById('qe-' + qi).classList.add('show');
+  if (!isRestore) {
+    answered++;
+    if (oi === QZ[qi].ans) score++;
+  } else {
+    answered++;
+    if (oi === QZ[qi].ans) score++;
+  }
+}
+
+function updateScore() {
+  var total = QZ.length;
+  var correct = 0;
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) {}
+  var count = 0;
+  for (var k in saved) { count++; if (saved[k] === QZ[parseInt(k)].ans) correct++; }
+  if (count === total) {
+    var el = document.getElementById('quiz-result');
+    el.style.display = 'block';
+    document.getElementById('quiz-num').textContent = correct + '/' + total;
+    var lv = correct >= 5 ? '深度理解 — 可以开始设计自己的多 Agent 系统' :
+             correct >= 3 ? '基本理解 — 建议回顾误解雷达和工程纪律 Tab' :
+                            '需要复习 — 建议从全景 Tab 重新阅读';
+    document.getElementById('quiz-level').textContent = lv;
+  }
+}
+
+initQuiz();
+</script>
+</body>
+</html>

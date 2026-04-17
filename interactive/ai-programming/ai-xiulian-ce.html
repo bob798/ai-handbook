@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 修炼册 · 六境修炼路径</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB",sans-serif;
+    background:#f5f4f0;color:#1a1a18;min-height:100vh;padding:0 0 60px;
+  }
+  .page-header{
+    padding:32px 24px 24px;border-bottom:.5px solid #dedad4;background:#fff;
+    margin-bottom:0;
+  }
+  .page-header h1{font-size:26px;font-weight:500;letter-spacing:-.02em;color:#1a1a18;margin-bottom:4px}
+  .page-header p{font-size:13px;color:#888780}
+  .legend{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#888780}
+  .legend-dot{width:8px;height:8px;border-radius:50%}
+
+  .container{max-width:680px;margin:0 auto;padding:24px 16px}
+
+  .tl{position:relative}
+  .tl-line{position:absolute;left:15px;top:0;bottom:0;width:1.5px;background:#dedad4;z-index:0}
+
+  .lvl{position:relative;z-index:1;margin-bottom:0}
+  .lvl-row{display:flex;gap:12px;align-items:flex-start}
+  .lvl-dot{
+    width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:10px;font-weight:500;flex-shrink:0;
+    margin-top:10px;cursor:pointer;transition:transform .18s;border:1.5px solid;
+    position:relative;z-index:2;background:#fff;
+  }
+  .lvl-dot:hover{transform:scale(1.12)}
+  .lvl-card{
+    flex:1;border:.5px solid #dedad4;border-radius:12px;padding:.85rem 1rem;
+    cursor:pointer;transition:background .18s,border-color .18s;margin:.4rem 0;background:#fff;
+  }
+  .lvl-card:hover{background:#f5f4f0}
+  .card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .realm-pill{
+    font-size:10px;font-weight:500;padding:2px 9px;border-radius:20px;
+    border:.5px solid;letter-spacing:.04em;flex-shrink:0;
+  }
+  .topic-name{font-size:15px;font-weight:500;color:#1a1a18}
+  .stars-row{margin-left:auto;display:flex;gap:2px;align-items:center}
+  .star{
+    width:9px;height:9px;
+    clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+    background:#dedad4;transition:background .2s;
+  }
+  .star.on{background:#EF9F27}
+  .flavor{font-size:12px;color:#5f5e5a;margin-top:6px;font-style:italic;line-height:1.6}
+  .meta-row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .entry-tag{
+    font-size:11px;padding:2px 8px;border-radius:20px;
+    border:.5px solid #dedad4;color:#5f5e5a;background:#f5f4f0;
+  }
+  .pulse-wrap{display:flex;align-items:center;gap:6px;margin-left:auto}
+  .pulse{width:7px;height:7px;border-radius:50%;background:#BA7517;animation:blink 1.6s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+  .pulse-label{font-size:11px;color:#854F0B;font-weight:500}
+  .lock-row{display:flex;align-items:center;gap:5px;margin-top:6px}
+  .lock-icon{width:11px;height:13px;border:1.5px solid #c8c7be;border-radius:2px;position:relative;margin-top:-2px}
+  .lock-icon::before{content:'';position:absolute;width:5px;height:4px;border:1.5px solid #c8c7be;border-radius:3px 3px 0 0;bottom:100%;left:1px}
+  .lock-text{font-size:11px;color:#888780}
+
+  .quads{display:none;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;padding-top:12px;border-top:.5px solid #dedad4}
+  .quads.open{display:grid}
+  @media(max-width:480px){.quads{grid-template-columns:1fr}}
+  .quad{border-radius:8px;padding:10px 12px;background:#f5f4f0}
+  .q-title{font-size:10px;font-weight:500;letter-spacing:.06em;margin-bottom:6px;text-transform:uppercase}
+  .q-list{list-style:none;display:flex;flex-direction:column;gap:3px}
+  .q-list li{font-size:11.5px;color:#1a1a18;padding-left:10px;position:relative;line-height:1.55}
+  .q-list li::before{content:'·';position:absolute;left:0;color:#888780}
+
+  .ms{display:flex;align-items:center;gap:8px;padding:3px 0 3px 42px;z-index:1;position:relative}
+  .ms-line{width:16px;height:1px;background:#dedad4}
+  .ms-text{font-size:10.5px;color:#888780;border:.5px dashed #dedad4;border-radius:8px;padding:3px 9px}
+
+  .footer{text-align:center;padding:32px 16px 0;font-size:11px;color:#c8c7be}
+
+  .case-link{
+    max-width:680px;margin:4px auto 0;padding:0 16px;
+  }
+  .case-link a{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 18px;border-radius:10px;text-decoration:none;
+    background:#faeeda;border:1px solid #EF9F27;transition:background .18s;
+  }
+  .case-link a:hover{background:#f5e4c4}
+  .case-link .cl-title{font-size:13px;font-weight:500;color:#854F0B}
+  .case-link .cl-desc{font-size:11px;color:#a08040;margin-top:2px}
+  .case-link .cl-arrow{font-size:16px;color:#EF9F27}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>AI 修炼册</h1>
+  <p>六境修炼路径 · 个人 AI 学习路径知识库</p>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#BA7517"></div>当前境界</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#AFA9EC"></div>待解锁</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#dedad4"></div>可突破</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tl" id="tl"><div class="tl-line"></div></div>
+  <div class="footer">AI 修炼册 · bob798/ai-handbook · 点击境界卡片展开四象限</div>
+</div>
+
+<div class="case-link">
+  <a href="omc-analysis.html">
+    <div>
+      <div class="cl-title">案例深度分析 · oh-my-claudecode（OMC）</div>
+      <div class="cl-desc">多 Agent 编排从理论到工程落地的完整拆解 · 7 个学习模块</div>
+    </div>
+    <span class="cl-arrow">&rarr;</span>
+  </a>
+</div>
+
+
+<script>
+const D=[
+  {id:'l0',lv:0,realm:'凡人境',topic:'AI 认知',stars:1,
+   rc:'#D3D1C7',bc:'#B4B2A9',tc:'#5F5E5A',bg:'#F1EFE8',bt:'#2C2C2A',
+   flavor:'道可道，非常道。先破幻觉，再立认知。AI 是什么，不是什么。',
+   entries:['所有人的起点'],
+   quads:{
+     cognition:['LLM / AI / AGI 的概念边界','Transformer：不懂数学也能理解','幻觉（Hallucination）的成因','模型 vs 产品：Claude / GPT / Gemini','Token 是什么，为什么要收费'],
+     tools:['Claude.ai：感受最先进的对话 AI','Perplexity：AI 搜索的第一感知','NotebookLM：AI 辅助阅读理解','YouTube / B站：AI 入门视频精选'],
+     projects:['用 AI 回答 10 个真实疑问，记录感受','让 AI 帮你写邮件，逐句对比原文','记录一周内：哪些场景用了 AI，哪些没用'],
+     output:['写：「我眼中的 AI 是什么」500字','向一位朋友解释 ChatGPT 为什么会胡说']
+   }
+  },
+  {id:'l1',lv:1,realm:'入道境',topic:'AI 使用',stars:2,
+   rc:'#B5D4F4',bc:'#85B7EB',tc:'#185FA5',bg:'#E6F1FB',bt:'#042C53',
+   flavor:'工欲善其事，必先利其器。学会与 AI 对话，是一切修炼的基础。',
+   entries:['产品经理','运营/市场','非技术背景'],
+   quads:{
+     cognition:['什么任务 AI 擅长，什么不擅长','上下文窗口与对话历史的关系','为什么同一问题每次答案不同','如何判断 AI 输出的可信度'],
+     tools:['Claude：写作/分析/长文首选','ChatGPT：通用场景/插件生态','Notion AI：嵌入工作流','Midjourney：图像生成入门体验'],
+     projects:['用 AI 完成一份完整的工作汇报','建立个人 Prompt 收藏夹（20条以上）','用 AI 梳理一个你完全陌生的领域'],
+     output:['分享：「这5个场景 AI 真的帮了我」','整理：我的 AI 工具箱 2025 版']
+   }
+  },
+  {id:'l2',lv:2,realm:'炼气境',topic:'Prompt 工程',stars:3,
+   rc:'#9FE1CB',bc:'#5DCAA5',tc:'#0F6E56',bg:'#E1F5EE',bt:'#04342C',
+   flavor:'炼气者，炼的是意图与语言之间的转换精度。说得准，AI 才懂你。',
+   entries:['内容创作者','有 AI 使用经验者'],
+   quads:{
+     cognition:['System Prompt vs User Prompt','Few-shot / Chain-of-thought 提示法','Temperature：创意性与确定性的权衡','角色设定（Persona）的作用机制','结构化输出：控制 JSON / Markdown 格式'],
+     tools:['Anthropic 官方 Prompt 工程文档','PromptPerfect：prompt 自动优化','LangSmith：prompt 测试与版本管理','Obsidian / Notion：个人 prompt 模板库'],
+     projects:['为5个工作场景各写1个可复用模板','测试同一任务的10种写法，对比输出质量','设计一个 AI 写作助手的完整 System Prompt'],
+     output:['写：「我的 Prompt 工程方法论」','开源你的 Prompt 模板库，附使用说明']
+   }
+  },
+  {id:'l3',lv:3,realm:'筑基境',topic:'AI 开发',stars:4,
+   rc:'#C0DD97',bc:'#97C459',tc:'#3B6D11',bg:'#EAF3DE',bt:'#173404',
+   flavor:'筑基者，将 AI 能力嵌入系统。从「会用」到「会做」，跨越最关键的一步。',
+   entries:['后端/全栈工程师','Java / Python 开发者'],
+   quads:{
+     cognition:['API 调用：Messages / Tokens / Streaming','RAG 架构：检索增强生成的核心原理','Embedding 向量化的直觉理解','Function Calling / Tool Use 机制','成本模型：Input / Output / Prompt Cache'],
+     tools:['Anthropic SDK（Python / Node.js）','LangChain / LlamaIndex：RAG 框架','Pinecone / Chroma：向量数据库','Vercel AI SDK：前端 AI 集成'],
+     projects:['调 API 做一个带记忆的聊天机器人','给自己的文档建一个 RAG 问答系统','Speakeasy 语言学习 app（已在进行）'],
+     output:['写：「从零搭建 RAG 系统踩过的坑」','开源一个 RAG Demo，附完整教程']
+   }
+  },
+  {id:'l4',lv:4,realm:'金丹境',topic:'Agent 工程',stars:5,current:true,
+   rc:'#FAC775',bc:'#EF9F27',tc:'#854F0B',bg:'#FAEEDA',bt:'#412402',
+   flavor:'金丹已成，自主决策之力初现。Agent 不是工具，是协作者。',
+   entries:['AI 工程师','有 AI 应用开发经验者'],
+   quads:{
+     cognition:['Agent 三要素：感知 / 决策 / 行动','工具调用链（Tool Chain）的设计','Memory 类型：短期/长期/实体/语义','Rate Limit 与 Session 状态恢复机制','多 Agent 协作：通信协议与拓扑选择'],
+     tools:['Claude Code：agentic coding 核心','oh-my-claudecode（OMC）：多模式编排','LangGraph：有向图状态机框架','claude-auto-retry：rate limit 自动续跑'],
+     projects:['音曼客服 Agent（三角色架构）','OMC 架构分析：案例深度拆解文章','企业 RAG 知识库系统生产化落地'],
+     output:['写：「我理解的 Agent」系列长文','AI 开发日记：Agent 实战（视频/文章双线）']
+   }
+  },
+  {id:'l5',lv:5,realm:'元婴境',topic:'系统架构',stars:6,locked:true,
+   rc:'#CECBF6',bc:'#AFA9EC',tc:'#534AB7',bg:'#EEEDFE',bt:'#26215C',
+   flavor:'元婴出窍，纵览全局。系统不是工具的堆砌，是工程哲学的具象。',
+   entries:['目标境界'],
+   quads:{
+     cognition:['多 Agent 设计模式：Planner/Worker/Reviewer','可观测性三要素：Trace / Metric / Log','成本治理：模型分级路由与 Token 预算','Human-in-the-loop：置信度阈值触发机制','AI 系统失效模式与降级策略'],
+     tools:['agent-orchestrator：并行 Agent 舰队管理','LangFuse / LangSmith：生产可观测','sortie：issue → agent session 自动化','自建 Planner Agent（CrewAI / LangGraph）'],
+     projects:['设计零人工干预的软件开发流水线','构建 AI 编程团队协同规范（team CLAUDE.md）','将音曼客服扩展为完整产品级系统'],
+     output:['写：「AI 系统架构设计指南」','开课：AI Agent 工程师成长路径']
+   }
+  }
+];
+
+const MS=[
+  '突破：能向外行清晰解释 LLM，且不说错',
+  '突破：AI 成为日常工作真实习惯，不只是新鲜感',
+  '突破：能稳定复现符合预期的输出，不靠运气',
+  '突破：独立上线第一个真实用户能用的 AI 应用',
+  '突破：交付一个自主完成复杂任务的 Agent 系统',
+];
+
+const QT={cognition:'认知目标',tools:'修炼工具',projects:'实战项目',output:'输出沉淀'};
+const tl=document.getElementById('tl');
+let activeId=null;
+
+function stars(n,max=6){
+  return Array.from({length:max},(_,i)=>`<div class="star${i<n?' on':''}"></div>`).join('');
+}
+function quad(key,items,tc){
+  return `<div class="quad">
+    <div class="q-title" style="color:${tc}">${QT[key]}</div>
+    <ul class="q-list">${items.map(i=>`<li>${i}</li>`).join('')}</ul>
+  </div>`;
+}
+
+D.forEach((d,i)=>{
+  const div=document.createElement('div');
+  div.className='lvl';
+  const lockHTML=d.locked?`<div class="lock-row"><div class="lock-icon"></div><span class="lock-text">修炼中，尚未解锁 — 当前目标境界</span></div>`:'';
+  const curHTML=d.current?`<div class="pulse-wrap"><div class="pulse"></div><span class="pulse-label">你当前在这里</span></div>`:'';
+
+  div.innerHTML=`<div class="lvl-row">
+    <div class="lvl-dot" style="border-color:${d.bc};color:${d.tc}" onclick="tog('${d.id}')">L${d.lv}</div>
+    <div class="lvl-card" id="card-${d.id}" onclick="tog('${d.id}')">
+      <div class="card-top">
+        <span class="realm-pill" style="background:${d.bg};color:${d.bt};border-color:${d.bc}">${d.realm}</span>
+        <span class="topic-name">${d.topic}</span>
+        <div class="stars-row">${stars(d.stars)}</div>
+      </div>
+      <div class="flavor">${d.flavor}</div>
+      <div class="meta-row">
+        ${d.entries.map(e=>`<span class="entry-tag">${e}</span>`).join('')}
+        ${curHTML}
+      </div>
+      ${lockHTML}
+      <div class="quads" id="q-${d.id}">
+        ${['cognition','tools','projects','output'].map(k=>quad(k,d.quads[k],d.tc)).join('')}
+      </div>
+    </div>
+  </div>`;
+  tl.appendChild(div);
+
+  if(i<MS.length){
+    const ms=document.createElement('div');
+    ms.className='ms';
+    ms.innerHTML=`<div class="ms-line"></div><span class="ms-text">${MS[i]}</span>`;
+    tl.appendChild(ms);
+  }
+});
+
+function tog(id){
+  const q=document.getElementById('q-'+id);
+  const c=document.getElementById('card-'+id);
+  const d=D.find(x=>x.id===id);
+  if(activeId===id){
+    q.classList.remove('open');
+    c.style.background='';c.style.borderColor='';
+    activeId=null;
+  } else {
+    if(activeId){
+      document.getElementById('q-'+activeId).classList.remove('open');
+      const pc=document.getElementById('card-'+activeId);
+      pc.style.background='';pc.style.borderColor='';
+    }
+    activeId=id;
+    q.classList.add('open');
+    c.style.background=d.bg;
+    c.style.borderColor=d.bc;
+  }
+}
+</script>
+</body>
+</html>

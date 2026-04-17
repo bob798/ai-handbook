@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MemGPT / Letta 小白指南</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --fg: #222;
+    --muted: #666;
+    --accent: #2a6df4;
+    --accent-soft: #eaf1ff;
+    --border: #e3e3dc;
+    --code-bg: #f4f4ef;
+    --good: #0a8a3a;
+    --bad: #c0392b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.75;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+  header {
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 24px;
+    margin-bottom: 40px;
+  }
+  header h1 {
+    font-size: 2.2em;
+    margin: 0 0 8px;
+    letter-spacing: -0.5px;
+  }
+  header .subtitle {
+    color: var(--muted);
+    font-size: 1.05em;
+  }
+  nav.toc {
+    background: var(--accent-soft);
+    border-left: 4px solid var(--accent);
+    padding: 16px 24px;
+    margin-bottom: 40px;
+    border-radius: 4px;
+  }
+  nav.toc h2 {
+    margin: 0 0 8px;
+    font-size: 1em;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  nav.toc ol { margin: 0; padding-left: 20px; }
+  nav.toc a { color: var(--fg); text-decoration: none; }
+  nav.toc a:hover { color: var(--accent); }
+  section { margin-bottom: 48px; }
+  h2 {
+    font-size: 1.6em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-top: 0;
+  }
+  h3 { font-size: 1.2em; margin-top: 28px; }
+  p { margin: 12px 0; }
+  strong { color: #000; }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.92em;
+  }
+  .callout {
+    background: #fff8e6;
+    border-left: 4px solid #f0b429;
+    padding: 12px 18px;
+    margin: 18px 0;
+    border-radius: 4px;
+  }
+  .analogy {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin: 16px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+  .analogy h4 {
+    margin: 0 0 8px;
+    color: var(--accent);
+    font-size: 1.05em;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: #fff;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  th, td {
+    text-align: left;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.95em;
+  }
+  tr:last-child td { border-bottom: none; }
+  .pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+  }
+  @media (max-width: 640px) {
+    .pros-cons { grid-template-columns: 1fr; }
+  }
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 22px;
+  }
+  .card.good { border-top: 3px solid var(--good); }
+  .card.bad { border-top: 3px solid var(--bad); }
+  .card h3 {
+    margin-top: 0;
+    font-size: 1.05em;
+  }
+  .card.good h3 { color: var(--good); }
+  .card.bad h3 { color: var(--bad); }
+  .card ul { padding-left: 18px; margin: 8px 0; }
+  .card li { margin-bottom: 10px; }
+  .steps {
+    counter-reset: step;
+    list-style: none;
+    padding: 0;
+  }
+  .steps li {
+    counter-increment: step;
+    padding: 10px 0 10px 44px;
+    position: relative;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 30px;
+    height: 30px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9em;
+  }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.9em;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+    margin-top: 60px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>MemGPT / Letta 小白指南</h1>
+  <div class="subtitle">用生活化比喻理解 LLM 的"长期记忆"系统</div>
+</header>
+
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#analogy">用"秘书"比喻理解 MemGPT</a></li>
+    <li><a href="#vs-rag">和 RAG 的区别</a></li>
+    <li><a href="#letta">Letta 能做什么、不能做什么</a></li>
+    <li><a href="#learn">该怎么学</a></li>
+  </ol>
+</nav>
+
+<section id="analogy">
+  <h2>一、用"秘书"比喻理解 MemGPT/Letta</h2>
+
+  <p>想象你雇了一个 <strong>秘书</strong> 帮你处理事务。</p>
+
+  <div class="analogy">
+    <h4>普通 LLM（比如直接用 ChatGPT）是什么样的秘书?</h4>
+    <ul>
+      <li>她 <strong>没有记性</strong>。每次你来找她,她脑子都是空的。</li>
+      <li>你必须把"我是谁、上次聊到哪、背景是什么"全部重新讲一遍。</li>
+      <li>她桌上只能摊开有限几页纸(上下文窗口),纸摊满了,最早的那几页就被扔掉,永远找不回来。</li>
+    </ul>
+  </div>
+
+  <div class="analogy">
+    <h4>MemGPT/Letta 式的秘书是什么样?</h4>
+    <p>她多了三样东西:</p>
+    <ol>
+      <li>
+        <strong>一张便签条,始终贴在她眼前</strong>(叫 Working Context / 核心记忆)<br>
+        写着:"老板叫 Bob,程序员,喜欢简洁回答,正在研究 agent 记忆系统。"
+        每次对话她一抬眼就看见——不用你重复。
+      </li>
+      <li>
+        <strong>一个档案柜,在她身后</strong>(叫 Archival Memory / 长期记忆)<br>
+        重要事情她会主动起身,写成卡片归档进去。下次需要时她翻柜子找。
+      </li>
+      <li>
+        <strong>一本通话记录本</strong>(叫 Recall Memory / 对话历史)<br>
+        所有聊过的话都留底,可以回查"上周三你说过什么"。
+      </li>
+    </ol>
+  </div>
+
+  <div class="callout">
+    <strong>关键一点:</strong> 这个秘书会 <strong>自己判断</strong> 什么该写进便签、什么该归档、什么时候该去翻档案柜。
+    她用的工具就是几个函数调用——<code>写便签</code>、<code>存档案</code>、<code>查档案</code>。
+    这就是 MemGPT 论文最核心的想法:<strong>让 LLM 自己管理自己的记忆,就像操作系统管理内存一样</strong>。
+  </div>
+</section>
+
+<section id="vs-rag">
+  <h2>二、和 RAG 的区别</h2>
+
+  <p>RAG(Retrieval-Augmented Generation,检索增强生成)你大概听过:
+  把一堆文档切片塞进向量数据库,用户提问时检索相关片段拼进 prompt。</p>
+
+  <p>表面上看,Letta 也有向量库、也做检索,好像就是 RAG?<strong>不是</strong>。区别在四个维度:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>维度</th>
+        <th>传统 RAG</th>
+        <th>MemGPT / Letta</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>记什么</strong></td>
+        <td>静态知识库(产品手册、论文、wiki)</td>
+        <td>会话中动态产生的事实("用户女儿叫 Lily"、"上次决定用 Postgres")</td>
+      </tr>
+      <tr>
+        <td><strong>谁来写</strong></td>
+        <td>工程师离线灌库,用户不参与</td>
+        <td>Agent 自己在对话中判断并写入</td>
+      </tr>
+      <tr>
+        <td><strong>何时检索</strong></td>
+        <td>每次用户提问都无脑检索一次</td>
+        <td>Agent 判断需要时才主动调用 <code>search</code> 工具</td>
+      </tr>
+      <tr>
+        <td><strong>常驻记忆</strong></td>
+        <td>没有,每次都是现查现用</td>
+        <td>有便签区(Working Context),关键信息始终在眼前</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>一句话区别:</strong><br>
+    • <strong>RAG 像图书馆</strong>——书早就摆好了,你每次去查一本。<br>
+    • <strong>Letta 像秘书的工作记忆</strong>——她边聊边记、边记边整理,重要的贴眼前、次要的归档、琐碎的留记录。
+  </div>
+
+  <p><strong>它们不冲突</strong>。Letta 里完全可以再接一个 RAG 来查产品手册——
+  秘书一边记你的偏好(Letta 的活),一边翻公司规章(RAG 的活)。</p>
+</section>
+
+<section id="letta">
+  <h2>三、Letta 能做什么、不能做什么</h2>
+  <p>项目地址:<code>github.com/letta-ai/letta</code></p>
+
+  <div class="pros-cons">
+    <div class="card good">
+      <h3>✅ 能做的</h3>
+      <ul>
+        <li><strong>给 agent 装上长期记忆</strong><br>
+          跑一个 Letta 服务(Docker 一条命令),通过 SDK/REST 创建 agent,自动持久化到 Postgres。
+          今天聊完关掉,明天接着聊,它还记得你。</li>
+        <li><strong>把记忆"看得见摸得着"</strong><br>
+          提供 ADE(Agent Development Environment)可视化界面,
+          直接看到便签区写了什么、档案柜里有哪些卡片、每次调用了哪个工具。</li>
+        <li><strong>换模型不用改代码</strong><br>
+          底层可接 Claude、GPT、Gemini、本地 Llama,切模型改配置即可。</li>
+        <li><strong>多 agent、多用户</strong><br>
+          多 agent 之间可以互发消息(研究员 agent 把结论扔给写作 agent),
+          支持多用户各自独立记忆。</li>
+        <li><strong>自定义工具</strong><br>
+          除了内置记忆工具,可加自己的函数(查天气、下订单、调内部 API),
+          用法与 OpenAI function calling 类似。</li>
+      </ul>
+    </div>
+
+    <div class="card bad">
+      <h3>❌ 不能做 / 做得不好的</h3>
+      <ul>
+        <li><strong>不是开箱即用的产品</strong><br>
+          它是框架不是应用。要自己写前端、接业务逻辑,
+          "拿来就用"的体验它给不了。</li>
+        <li><strong>记忆会犯错</strong><br>
+          Agent 自己决定"这事值得记吗",有时漏记或误记。
+          生产环境需要人工审校或额外护栏。</li>
+        <li><strong>超大知识库不如专用 RAG</strong><br>
+          如果需求是"10 万份 PDF 里搜答案",
+          Letta 能跑但质量不如 LlamaIndex、Haystack 等专用方案。
+          它的强项是对话型记忆,不是海量文档检索。</li>
+        <li><strong>延迟更高更贵</strong><br>
+          每轮对话 agent 可能触发 3~5 次模型调用(查档案、写便签),
+          比普通 LLM 调用慢且成本高。</li>
+        <li><strong>救不了笨模型</strong><br>
+          不解决"模型本身不够聪明"的问题。
+          底层模型笨,Letta 也救不了。</li>
+        <li><strong>生态仍在早期</strong><br>
+          API 还在变化,文档有坑,中文资料稀少。
+          小白上手要有心理准备。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="learn">
+  <h2>四、该怎么学</h2>
+  <p>如果你是第一次接触,建议这个顺序:</p>
+  <ol class="steps">
+    <li><strong>先玩 5 分钟 ChatGPT 的 Memory 功能</strong>,体会"它记住我"是什么感觉——
+      这是 MemGPT 思想的商业化简化版。</li>
+    <li><strong>再读 MemGPT 论文的前 3 页</strong>(arXiv:2310.08560),
+      只看图就够了,尤其是那张操作系统类比图。</li>
+    <li><strong>最后跑 Letta 的 quickstart</strong>,用 ADE 界面看 agent 怎么改自己的便签——
+      看一次胜过读十篇博客。</li>
+  </ol>
+</section>
+
+<footer>
+  生成于 2026-04-12 · 为小白入门写作
+</footer>
+
+</body>
+</html>
