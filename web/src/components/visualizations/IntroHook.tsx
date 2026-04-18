@@ -13,7 +13,7 @@ export function IntroHook() {
         className="relative z-10"
       >
         <div className="text-xs uppercase tracking-widest text-indigo-600 dark:text-indigo-400 font-semibold mb-3">
-          拔高型 · 非入门
+          shareAI s01 的深度补充 · 非入门
         </div>
 
         <motion.h2
@@ -32,11 +32,11 @@ export function IntroHook() {
           transition={{ duration: 0.5, delay: 0.6 }}
           className="text-base md:text-lg text-zinc-700 dark:text-zinc-300 mt-3"
         >
-          你应该先跟着{" "}
+          你应该先完成{" "}
           <span className="font-mono font-semibold text-indigo-600 dark:text-indigo-400">
-            shareAI-lab/learn-claude-code
+            shareAI · s01 The Agent Loop
           </span>{" "}
-          的 12 讲动手写过一个 harness，再回来读这里。
+          的 60 行 agent loop 代码，再回来读这里。
         </motion.p>
 
         <motion.div
@@ -46,12 +46,12 @@ export function IntroHook() {
           className="mt-6 flex flex-wrap gap-3"
         >
           <a
-            href="https://github.com/shareAI-lab/learn-claude-code"
+            href="https://github.com/shareAI-lab/learn-claude-code/blob/main/docs/zh/s01-the-agent-loop.md"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300 transition"
           >
-            先去那里动手
+            先去写 s01
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
           <a
