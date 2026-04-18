@@ -8,7 +8,7 @@
 
 [![Docs](https://img.shields.io/badge/docs-52%20markdown-F26419?style=flat-square)](./content)
 [![Interactive](https://img.shields.io/badge/interactive-27%20HTML-8B5CF6?style=flat-square)](./interactive)
-[![Code](https://img.shields.io/badge/runnable-19%20Python-3572A5?style=flat-square)](./code)
+[![Code](https://img.shields.io/badge/runnable-20%20Python-3572A5?style=flat-square)](./code)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](./web)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](#license)
 [![中文](https://img.shields.io/badge/中文-原创-EF4444?style=flat-square)]()
@@ -150,6 +150,24 @@ Claude Desktop 配置见 [code/mcp-demo/README.md](./code/mcp-demo/README.md)。
 
 ---
 
+## 🧪 跑 ReAct 复现实验
+
+```bash
+cd code/react-hands-on
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+export ANTHROPIC_API_KEY=sk-ant-...       # 或 OPENAI_API_KEY / VOLCENGINE_API_KEY
+python run_react.py --idx 0               # 跑单题，看完整推理链
+python run_react.py --n 5                 # 随机跑 5 题
+python run_react.py --backend volcengine --n 5 --save-md  # 换后端 + 保存结果
+```
+
+基于 [ReAct 论文](https://arxiv.org/abs/2210.03629)（ICLR 2023）原仓库改造，将已下线的 `text-davinci-002` 替换为 Anthropic / OpenAI / DeepSeek 现代 chat API。覆盖 HotpotQA、FEVER、ALFWorld、WebShop 四类任务。
+
+详细说明见 [code/react-hands-on/HANDS_ON.md](./code/react-hands-on/HANDS_ON.md)。
+
+---
+
 ## 🏗️ 项目结构
 
 ```
@@ -163,7 +181,8 @@ learn-ai-engineering/
 │   ├── mcp/  agent/  rag/  ai-programming/
 ├── code/             可运行示例
 │   ├── mcp-demo/     Python MCP Server
-│   └── rag/          V1-V10 RAG 代码 + 测试
+│   ├── rag/          V1-V10 RAG 代码 + 测试
+│   └── react-hands-on/  ReAct 论文复现（改造版，可直接跑）
 └── web/              Next.js 16 文档站
     ├── scripts/      extract-content.ts（构建期扫描）
     └── src/          App Router 页面 + 组件
