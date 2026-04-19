@@ -60,6 +60,7 @@ export function interactiveBySection(section: string): InteractiveAsset[] {
 // --- Sub-folder display name mapping ---
 
 const SUBFOLDER_LABELS: Record<string, string> = {
+  // guide (no subfolders yet)
   // mcp
   "mcp/01-foundations": "Foundations · 入门基础",
   "mcp/02-core-concepts": "Core Concepts · 核心概念",

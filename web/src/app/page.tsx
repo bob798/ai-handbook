@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, BookOpen, Sparkles, Code2, Boxes } from "lucide-react";
+import { ArrowRight, BookOpen, Sparkles, Code2, Boxes, Compass } from "lucide-react";
 import { sections, docsBySection, interactiveBySection } from "@/lib/docs";
 import { MCPNPlusM } from "@/components/visualizations/MCPNPlusM";
 
 const SECTION_ICONS: Record<string, typeof Boxes> = {
+  guide: Compass,
   mcp: Boxes,
   agent: Sparkles,
   rag: BookOpen,
@@ -14,6 +15,7 @@ const SECTION_ICONS: Record<string, typeof Boxes> = {
 };
 
 const SECTION_GRADIENTS: Record<string, string> = {
+  guide: "from-sky-500/10 to-cyan-500/5",
   mcp: "from-orange-500/10 to-amber-500/5",
   agent: "from-violet-500/10 to-fuchsia-500/5",
   rag: "from-emerald-500/10 to-teal-500/5",
@@ -37,7 +39,7 @@ export default function HomePage() {
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-orange-100/80 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 mb-6">
               <span className="size-1.5 rounded-full bg-orange-500 animate-pulse" />
-              52 docs · 27 interactive · 19 runnable examples
+              55+ docs · 28 interactive · 19 runnable examples
             </div>
 
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
@@ -56,10 +58,10 @@ export default function HomePage() {
 
             <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
               <Link
-                href="/mcp"
+                href="/guide"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium transition shadow-sm"
               >
-                从 MCP 开始 <ArrowRight size={16} />
+                阅读指南 <ArrowRight size={16} />
               </Link>
               <a
                 href="https://github.com/bob798/learn-ai-engineering"
@@ -103,7 +105,7 @@ export default function HomePage() {
           <div className="text-xs uppercase tracking-wider text-orange-600 font-semibold mb-2">
             内容主题
           </div>
-          <h2 className="text-3xl font-bold">4 个主题，1 张知识地图</h2>
+          <h2 className="text-3xl font-bold">5 个模块，1 条学习路径</h2>
         </div>
 
         <div className="grid gap-5 md:grid-cols-2">
@@ -191,7 +193,7 @@ export default function HomePage() {
             >
               GitHub
             </a>
-            <a href="/mcp" className="hover:text-orange-600 transition">
+            <a href="/guide" className="hover:text-orange-600 transition">
               开始阅读
             </a>
           </div>

@@ -25,6 +25,7 @@ interface Section {
 }
 
 const SECTIONS: Section[] = [
+  { slug: "guide",          dir: "00-guide",          title: "Guide",          description: "阅读指南 · 给谁看 · 怎么读" },
   { slug: "mcp",            dir: "01-mcp",            title: "MCP",            description: "模型上下文协议 · 从协议到生态" },
   { slug: "agent",          dir: "02-agent",          title: "Agent",          description: "智能体架构 · 方法论 · 生态拆解" },
   { slug: "rag",            dir: "03-rag",            title: "RAG",            description: "检索增强生成 · 从 V1 到企业级" },
