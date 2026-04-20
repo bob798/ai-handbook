@@ -75,6 +75,7 @@ const SUBFOLDER_LABELS: Record<string, string> = {
   "agent/templates": "Templates · 可复用模板",
   // rag
   "rag/mock-interview": "Mock Interview · 模拟面试",
+  "rag/research": "Research · 论文参考",
   // ai-programming
   "ai-programming/cases": "Cases · 实战案例",
 };

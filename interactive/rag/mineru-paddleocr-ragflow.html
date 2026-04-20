@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MinerU vs PaddleOCR vs RAGFlow 对比</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #f8f9fa; --card: #fff; --border: #e0e0e0;
+    --primary: #2563eb; --secondary: #7c3aed; --accent: #059669;
+    --text: #1e293b; --text2: #64748b;
+    --font: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; padding: 24px; }
+  h1 { font-size: 1.6rem; margin-bottom: 8px; }
+  h2 { font-size: 1.3rem; margin: 32px 0 16px; color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 6px; }
+  h3 { font-size: 1.1rem; margin: 20px 0 10px; color: var(--secondary); }
+  .subtitle { color: var(--text2); margin-bottom: 24px; font-size: 0.95rem; }
+
+  /* Mermaid 容器 */
+  .mermaid-wrap {
+    background: #f1f5f9; border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; margin: 16px 0; position: relative; overflow: hidden; cursor: grab;
+  }
+  .mermaid-wrap:active { cursor: grabbing; }
+  .mermaid-wrap svg { display: block; margin: 0 auto; max-width: 100%; }
+
+  /* 控件栏 */
+  .mermaid-controls {
+    position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; z-index: 10;
+  }
+  .mermaid-controls button {
+    width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 6px;
+    background: white; cursor: pointer; font-size: 14px; display: flex;
+    align-items: center; justify-content: center; color: var(--text2);
+  }
+  .mermaid-controls button:hover { background: #e2e8f0; color: var(--text); }
+
+  /* 全屏 */
+  .mermaid-wrap.fullscreen {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 9999; border-radius: 0; margin: 0; display: flex;
+    align-items: center; justify-content: center; background: #f1f5f9;
+  }
+
+  /* 对比表 */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9rem; }
+  th, td { padding: 10px 12px; border: 1px solid var(--border); text-align: left; }
+  th { background: #eef2ff; font-weight: 600; white-space: nowrap; }
+  tr:nth-child(even) td { background: #fafafa; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
+  .tag-tool { background: #dbeafe; color: #1d4ed8; }
+  .tag-framework { background: #ede9fe; color: #6d28d9; }
+  .tag-platform { background: #d1fae5; color: #047857; }
+
+  /* 关键结论卡片 */
+  .conclusion {
+    background: linear-gradient(135deg, #eef2ff, #f0fdf4); border: 1px solid #c7d2fe;
+    border-radius: 12px; padding: 20px; margin: 20px 0;
+  }
+  .conclusion h3 { color: var(--accent); margin-top: 0; }
+  .conclusion ul { padding-left: 20px; }
+  .conclusion li { margin: 6px 0; }
+</style>
+</head>
+<body>
+
+<h1>MinerU vs PaddleOCR vs RAGFlow 对比分析</h1>
+<p class="subtitle">调研日期：2026-04-20 | 项目：RAG 客服系统</p>
+
+<!-- ============================================================ -->
+<h2>一、MinerU 与 PaddleOCR：层级关系图</h2>
+
+<!-- 纯 CSS 嵌套盒子图 -->
+<div class="arch-diagram">
+  <!-- 左侧：输入 -->
+  <div class="arch-input">
+    <div class="input-item">PDF</div>
+    <div class="input-item">DOCX</div>
+    <div class="input-item">图片</div>
+  </div>
+
+  <!-- 中间：MinerU 大盒子，内含 PaddleOCR -->
+  <div class="arch-arrow">&#x27A1;</div>
+
+  <div class="mineru-box">
+    <div class="mineru-label">MinerU <span class="label-sub">文档解析框架（应用层）</span></div>
+    <div class="mineru-flow">
+      <div class="flow-step step-m">版面检测<br/><small>mAP 97.5</small></div>
+      <div class="flow-arrow">&#x2192;</div>
+
+      <!-- PaddleOCR 嵌套在 MinerU 内部 -->
+      <div class="paddle-box">
+        <div class="paddle-label">PaddleOCR <span class="label-sub">OCR 引擎（工具层）</span></div>
+        <div class="paddle-modules">
+          <div class="flow-step step-p">文字检测<br/><small>DB++</small></div>
+          <div class="flow-arrow">&#x2192;</div>
+          <div class="flow-step step-p">文字识别<br/><small>SVTR</small></div>
+        </div>
+        <div class="paddle-extras">
+          <span class="pill">版面分析</span>
+          <span class="pill">表格识别</span>
+          <span class="pill">公式识别</span>
+        </div>
+        <div class="paddle-note">也可独立使用 &mdash; <code>pip install paddleocr</code></div>
+      </div>
+
+      <div class="flow-arrow">&#x2192;</div>
+      <div class="flow-step step-m">元素分类<br/><small>text/table/image</small></div>
+      <div class="flow-arrow">&#x2192;</div>
+      <div class="flow-step step-m">关系建模<br/><small>caption 关联</small></div>
+    </div>
+  </div>
+
+  <div class="arch-arrow">&#x27A1;</div>
+
+  <!-- 右侧：输出对比 -->
+  <div class="arch-output">
+    <div class="output-box out-mineru">
+      <div class="out-label">MinerU 输出</div>
+      <div class="out-content">
+        <code>content_list.json</code><br/>
+        结构化 JSON<br/>
+        <small>类型 + 页码 + bbox + caption</small>
+      </div>
+    </div>
+    <div class="output-box out-paddle">
+      <div class="out-label">PaddleOCR 单独输出</div>
+      <div class="out-content">
+        识别文字 + 坐标 + 置信度<br/>
+        <small>无结构化，无关系建模</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .arch-diagram {
+    display: flex; align-items: center; gap: 12px;
+    padding: 24px; background: #f8fafc; border: 1px solid var(--border);
+    border-radius: 12px; margin: 16px 0; overflow-x: auto;
+  }
+  .arch-input { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+  .input-item {
+    background: #f1f5f9; border: 2px solid #94a3b8; border-radius: 8px;
+    padding: 8px 16px; font-weight: 600; text-align: center; font-size: 0.9rem;
+  }
+  .arch-arrow { font-size: 1.5rem; color: #94a3b8; flex-shrink: 0; }
+  .arch-output { display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; }
+
+  /* MinerU 外层大盒子 */
+  .mineru-box {
+    border: 3px solid #7c3aed; border-radius: 16px; padding: 16px;
+    background: linear-gradient(135deg, #faf5ff, #f5f3ff); position: relative;
+    flex-shrink: 0;
+  }
+  .mineru-label {
+    position: absolute; top: -13px; left: 20px; background: #7c3aed;
+    color: white; padding: 2px 14px; border-radius: 20px; font-weight: 700;
+    font-size: 0.95rem; white-space: nowrap;
+  }
+  .label-sub { font-weight: 400; font-size: 0.8rem; opacity: 0.85; }
+  .mineru-flow {
+    display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: nowrap;
+  }
+
+  /* PaddleOCR 内嵌盒子 */
+  .paddle-box {
+    border: 3px solid #2563eb; border-radius: 12px; padding: 12px;
+    background: linear-gradient(135deg, #eff6ff, #dbeafe); position: relative;
+    flex-shrink: 0;
+  }
+  .paddle-label {
+    position: absolute; top: -12px; left: 14px; background: #2563eb;
+    color: white; padding: 2px 12px; border-radius: 20px; font-weight: 700;
+    font-size: 0.85rem; white-space: nowrap;
+  }
+  .paddle-modules {
+    display: flex; align-items: center; gap: 6px; margin-top: 8px;
+  }
+  .paddle-extras {
+    display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;
+  }
+  .pill {
+    background: #bfdbfe; color: #1e40af; padding: 2px 10px; border-radius: 12px;
+    font-size: 0.75rem; font-weight: 500;
+  }
+  .paddle-note {
+    margin-top: 8px; font-size: 0.75rem; color: #6b7280;
+    border-top: 1px dashed #93c5fd; padding-top: 6px;
+  }
+
+  /* 流程步骤 */
+  .flow-step {
+    padding: 10px 14px; border-radius: 8px; text-align: center;
+    font-size: 0.85rem; font-weight: 600; line-height: 1.3;
+  }
+  .flow-step small { font-weight: 400; color: #6b7280; }
+  .step-m { background: #e9d5ff; border: 1px solid #c084fc; }
+  .step-p { background: #bfdbfe; border: 1px solid #60a5fa; }
+  .flow-arrow { color: #94a3b8; font-size: 1.2rem; flex-shrink: 0; }
+
+  /* 输出盒子 */
+  .output-box {
+    border-radius: 10px; padding: 12px 16px; font-size: 0.85rem;
+  }
+  .out-mineru { background: #f3e8ff; border: 2px solid #a78bfa; }
+  .out-paddle { background: #dbeafe; border: 2px solid #60a5fa; }
+  .out-label { font-weight: 700; margin-bottom: 4px; font-size: 0.8rem; }
+  .out-content small { color: #6b7280; }
+  .out-content code { background: #e9d5ff; padding: 1px 6px; border-radius: 4px; font-size: 0.8rem; }
+</style>
+
+<h3>核心区别</h3>
+<table>
+  <tr>
+    <th>维度</th>
+    <th><span class="tag tag-tool">PaddleOCR</span> OCR 引擎</th>
+    <th><span class="tag tag-framework">MinerU</span> 文档解析框架</th>
+  </tr>
+  <tr><td><b>定位</b></td><td>图片/扫描件 → 文字识别</td><td>PDF/DOCX → 结构化数据（端到端）</td></tr>
+  <tr><td><b>能力边界</b></td><td>检测 + 识别 + 版面分析</td><td>解析 + 分类 + 关系建模 + 输出</td></tr>
+  <tr><td><b>关系</b></td><td colspan="2" style="text-align:center">MinerU <b>内置</b> PaddleOCR 作为 OCR 引擎 — 上下游关系，不是竞品</td></tr>
+  <tr><td><b>独立使用</b></td><td>可以 — 只做 OCR 识别</td><td>可以 — 端到端文档解析</td></tr>
+  <tr><td><b>输入</b></td><td>图片 / numpy array</td><td>PDF / DOCX / 图片 / 电子书</td></tr>
+  <tr><td><b>输出</b></td><td>文字 + 坐标 + 置信度</td><td>Markdown + content_list.json（结构化）</td></tr>
+  <tr><td><b>框架</b></td><td>PaddlePaddle（百度）</td><td>PyTorch</td></tr>
+  <tr><td><b>OmniDocBench</b></td><td><b>92.86</b>（第 1）</td><td>90.67（第 3）</td></tr>
+  <tr><td><b>安装</b></td><td><code>pip install paddleocr</code></td><td>依赖链复杂（torch + sglang）</td></tr>
+  <tr><td><b>Windows</b></td><td>原生支持</td><td>2.0+ 受限（sgl-kernel 无 wheel）</td></tr>
+  <tr><td><b>macOS Intel</b></td><td>可用</td><td>不可用（torch 限制）</td></tr>
+</table>
+
+<div class="conclusion">
+  <h3>一句话总结</h3>
+  <p>PaddleOCR 是<b>螺丝刀</b>（专做 OCR 识别），MinerU 是<b>工具箱</b>（端到端文档解析，内含 PaddleOCR 这把螺丝刀）。</p>
+</div>
+
+<!-- ============================================================ -->
+<h2>二、MinerU 与 RAGFlow：架构定位图</h2>
+
+<div class="mermaid-wrap" id="wrap-2">
+  <div class="mermaid-controls">
+    <button onclick="zoom(this,1.2)" title="放大">+</button>
+    <button onclick="zoom(this,0.8)" title="缩小">-</button>
+    <button onclick="resetZoom(this)" title="重置">&#x21BA;</button>
+    <button onclick="toggleFullscreen(this)" title="全屏">&#x26F6;</button>
+  </div>
+  <div class="mermaid-inner" style="transform-origin:center center">
+    <pre class="mermaid">
+graph LR
+    subgraph MinerU2["<b>MinerU</b><br/>文档解析引擎"]
+        direction TB
+        MA["PDF / DOCX 输入"]
+        MB["版面分析 + OCR"]
+        MC["结构化输出<br/>content_list.json"]
+        MA --> MB --> MC
+    end
+
+    subgraph RAGFlow2["<b>RAGFlow</b><br/>端到端 RAG 平台"]
+        direction TB
+        R1["文档解析<br/>python-docx / Deepdoc"]
+        R2["智能分块<br/>模板 + 可视化编辑"]
+        R3["向量化 + 混合检索<br/>Dense + BM25"]
+        R4["精排 Reranker"]
+        R5["LLM 生成回答<br/>多模态输出"]
+        R6["API / 聊天界面"]
+        R1 --> R2 --> R3 --> R4 --> R5 --> R6
+    end
+
+    MC -.->|"可作为 RAGFlow 的解析层"| R1
+
+    subgraph Scope["覆盖范围"]
+        S1["MinerU：只负责<br/>文档 → 结构化数据"]
+        S2["RAGFlow：负责<br/>文档 → 检索 → 回答<br/>（全链路）"]
+    end
+
+    style MinerU2 fill:#ede9fe,stroke:#7c3aed,stroke-width:2px
+    style RAGFlow2 fill:#fef3c7,stroke:#d97706,stroke-width:2px
+    style Scope fill:#f0fdf4,stroke:#059669,stroke-width:1px
+    </pre>
+  </div>
+</div>
+
+<h3>定位差异</h3>
+<table>
+  <tr>
+    <th>维度</th>
+    <th><span class="tag tag-framework">MinerU</span> 文档解析引擎</th>
+    <th><span class="tag tag-platform">RAGFlow</span> 端到端 RAG 平台</th>
+  </tr>
+  <tr><td><b>定位</b></td><td>文档解析（Pipeline 的第一步）</td><td>完整 RAG 系统（从文档到回答）</td></tr>
+  <tr><td><b>覆盖范围</b></td><td>文档 → 结构化数据</td><td>文档 → 分块 → 检索 → 精排 → 生成 → 输出</td></tr>
+  <tr><td><b>可类比</b></td><td>发动机</td><td>整辆车</td></tr>
+  <tr><td><b>DOCX 解析</b></td><td>python-docx + mammoth（~2700 行）<br/>表格最强，公式/超链接/文本框全提取</td><td>python-docx（~400 行）<br/>文本+表格+图片，简洁够用</td></tr>
+  <tr><td><b>图片处理</b></td><td>提取 blob，<b>不做 OCR</b></td><td>发给 Vision LLM（GPT-4V/Qwen-VL）做描述</td></tr>
+  <tr><td><b>分块策略</b></td><td>不负责分块</td><td>模板分块 + 可视化编辑 + TOC 提取</td></tr>
+  <tr><td><b>检索</b></td><td>不负责</td><td>Dense + BM25 混合检索 + Reranker</td></tr>
+  <tr><td><b>LLM 集成</b></td><td>无</td><td>多模型支持 + Agentic RAG</td></tr>
+  <tr><td><b>多模态输出</b></td><td>无</td><td>ContentBlock 数组（文本+图片+表格）</td></tr>
+  <tr><td><b>部署</b></td><td>pip / Docker</td><td>Docker Compose（含 ES/Redis/MinIO）</td></tr>
+  <tr><td><b>开箱即用</b></td><td>需自建后续链路</td><td>带 Web UI，上传文档即可问答</td></tr>
+  <tr><td><b>GitHub Stars</b></td><td>~25k</td><td>~30k</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>三、三者关系总览</h2>
+
+<div class="mermaid-wrap" id="wrap-3">
+  <div class="mermaid-controls">
+    <button onclick="zoom(this,1.2)" title="放大">+</button>
+    <button onclick="zoom(this,0.8)" title="缩小">-</button>
+    <button onclick="resetZoom(this)" title="重置">&#x21BA;</button>
+    <button onclick="toggleFullscreen(this)" title="全屏">&#x26F6;</button>
+  </div>
+  <div class="mermaid-inner" style="transform-origin:center center">
+    <pre class="mermaid">
+graph TB
+    subgraph Layer1["工具层 — 单一能力"]
+        PO["<b>PaddleOCR</b><br/>图片 → 文字"]
+        PD["python-docx<br/>DOCX → XML 遍历"]
+        MM["mammoth<br/>DOCX → HTML"]
+    end
+
+    subgraph Layer2["引擎层 — 文档解析"]
+        MU["<b>MinerU</b><br/>PDF/DOCX → 结构化 JSON<br/>内置 PaddleOCR + mammoth"]
+        DD["Deepdoc<br/>RAGFlow 自研解析"]
+    end
+
+    subgraph Layer3["平台层 — 端到端 RAG"]
+        RF["<b>RAGFlow</b><br/>文档 → 检索 → 回答<br/>带 Web UI + API"]
+    end
+
+    subgraph Layer4["我们的项目"]
+        OUR["<b>自研 RAG Pipeline</b><br/>python-docx + 图片内联<br/>+ 混合检索 + LLM 生成"]
+    end
+
+    PO -.-> MU
+    PD -.-> MU
+    MM -.-> MU
+    PD -.-> DD
+    DD -.-> RF
+    PD -.-> OUR
+
+    style Layer1 fill:#dbeafe,stroke:#2563eb,stroke-width:1px
+    style Layer2 fill:#ede9fe,stroke:#7c3aed,stroke-width:1px
+    style Layer3 fill:#fef3c7,stroke:#d97706,stroke-width:1px
+    style Layer4 fill:#d1fae5,stroke:#059669,stroke-width:2px
+    </pre>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>四、为什么参考 RAGFlow 而非 MinerU</h2>
+
+<div class="conclusion">
+  <h3>选型逻辑</h3>
+  <ul>
+    <li><b>RAGFlow 是同类项目</b> — 都是端到端 RAG 系统，架构决策可直接借鉴（分块策略、多模态输出、ContentBlock 协议）</li>
+    <li><b>MinerU 只是一个环节</b> — 只负责文档解析，后续的检索/精排/生成都得自己建</li>
+    <li><b>RAGFlow 的 DOCX 解析方案被验证可行</b> — body 遍历保序、XPath 提取图片、表格 HTML 渲染，我们的 DocxParser 直接参考了这套模式</li>
+    <li><b>MinerU 在我们的场景过重</b> — 知识库以 DOCX 为主，MinerU 的 PDF 版面分析能力用不上；torch 依赖在 Intel Mac 和 Windows 上都有问题</li>
+  </ul>
+</div>
+
+<h3>具体借鉴点</h3>
+<table>
+  <tr><th>借鉴内容</th><th>来源</th><th>用在哪里</th></tr>
+  <tr><td>body 遍历保序（图文位置保持）</td><td>RAGFlow <code>docx_parser.py</code></td><td>DocxParser <code>_walk_body</code></td></tr>
+  <tr><td><code>pic:pic</code> XPath 图片提取</td><td>RAGFlow</td><td>DocxParser <code>_extract_images_from_paragraph</code></td></tr>
+  <tr><td>ContentBlock 数组输出协议</td><td>RAGFlow 多模态输出</td><td>08 文档 ContentBlock 规范</td></tr>
+  <tr><td>表格注入标题作为 caption</td><td>RAGFlow 表格处理</td><td>待实现</td></tr>
+  <tr><td>mammoth 全文档预解析表格</td><td>MinerU（非 RAGFlow）</td><td>待实现（P2 优先级）</td></tr>
+  <tr><td>TOC 锚点预收集</td><td>MinerU（非 RAGFlow）</td><td>待实现（P1 优先级）</td></tr>
+</table>
+
+<h3>不选 RAGFlow 直接部署的原因</h3>
+<table>
+  <tr><th>原因</th><th>说明</th></tr>
+  <tr><td>部署太重</td><td>Docker Compose 需 ES + Redis + MinIO + MySQL，运维成本高</td></tr>
+  <tr><td>定制性不足</td><td>意图识别、查询改写、置信度评估等环节需要深度定制</td></tr>
+  <tr><td>图片 OCR 依赖 LLM API</td><td>RAGFlow 图片处理需要 GPT-4V/Qwen-VL API，我们新方案不需要 OCR</td></tr>
+  <tr><td>学习价值</td><td>手搓 RAG 全链路是项目目标之一</td></tr>
+</table>
+
+<script>
+  // Mermaid 初始化
+  mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: {
+    fontFamily: '"PingFang SC","Noto Sans SC",system-ui,sans-serif',
+    fontSize: '14px', primaryColor: '#e0e7ff', primaryBorderColor: '#6366f1',
+    lineColor: '#94a3b8', secondaryColor: '#fef3c7'
+  }});
+  mermaid.run().then(() => {
+    document.querySelectorAll('.mermaid-inner').forEach(el => {
+      el.dataset.scale = '1'; el.dataset.x = '0'; el.dataset.y = '0';
+    });
+  });
+
+  // 缩放
+  function getInner(btn) { return btn.closest('.mermaid-wrap').querySelector('.mermaid-inner'); }
+  function applyTransform(inner) {
+    inner.style.transform = `translate(${inner.dataset.x}px,${inner.dataset.y}px) scale(${inner.dataset.scale})`;
+  }
+  function zoom(btn, factor) {
+    const inner = getInner(btn);
+    inner.dataset.scale = Math.max(0.3, Math.min(3, parseFloat(inner.dataset.scale) * factor));
+    applyTransform(inner);
+  }
+  function resetZoom(btn) {
+    const inner = getInner(btn);
+    inner.dataset.scale = '1'; inner.dataset.x = '0'; inner.dataset.y = '0';
+    applyTransform(inner);
+  }
+  function toggleFullscreen(btn) {
+    btn.closest('.mermaid-wrap').classList.toggle('fullscreen');
+  }
+
+  // 拖拽
+  document.querySelectorAll('.mermaid-wrap').forEach(wrap => {
+    let dragging = false, startX, startY;
+    const inner = wrap.querySelector('.mermaid-inner');
+    wrap.addEventListener('mousedown', e => {
+      if (e.target.tagName === 'BUTTON') return;
+      dragging = true; startX = e.clientX - parseFloat(inner.dataset.x || 0);
+      startY = e.clientY - parseFloat(inner.dataset.y || 0);
+    });
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      inner.dataset.x = e.clientX - startX; inner.dataset.y = e.clientY - startY;
+      applyTransform(inner);
+    });
+    window.addEventListener('mouseup', () => { dragging = false; });
+    // 滚轮缩放
+    wrap.addEventListener('wheel', e => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.1 : 0.9;
+      inner.dataset.scale = Math.max(0.3, Math.min(3, parseFloat(inner.dataset.scale) * factor));
+      applyTransform(inner);
+    }, { passive: false });
+  });
+
+  // ESC 退出全屏
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.fullscreen').forEach(el => el.classList.remove('fullscreen'));
+  });
+</script>
+
+</body>
+</html>
