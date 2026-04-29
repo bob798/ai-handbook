@@ -1,3 +1,7 @@
+"use client";
+
+import { useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { LoopTokenGrowth } from "./visualizations/LoopTokenGrowth";
 import { ToolGranularityCompare } from "./visualizations/ToolGranularityCompare";
 import { MessageConveyor } from "./visualizations/MessageConveyor";
@@ -22,6 +26,25 @@ const VIZ_PLACEHOLDER_RE =
   /<div\s+data-viz="([A-Za-z0-9_-]+)"\s*(?:\/>|>\s*<\/div>)/g;
 
 export function DocBody({ html }: { html: string }) {
+  const router = useRouter();
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
+  /** Intercept clicks on internal links to use Next.js router (respects basePath) */
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      const anchor = (e.target as HTMLElement).closest("a");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href) return;
+      // Skip external links, anchors, and non-http protocols
+      if (href.startsWith("http") || href.startsWith("mailto:") || href.startsWith("#")) return;
+      // Internal path: navigate via router (basePath is auto-prepended)
+      e.preventDefault();
+      router.push(href);
+    },
+    [router]
+  );
+
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -66,5 +89,5 @@ export function DocBody({ html }: { html: string }) {
     );
   }
 
-  return <article className="prose-doc">{parts}</article>;
+  return <article className="prose-doc" onClick={handleClick}>{parts}</article>;
 }

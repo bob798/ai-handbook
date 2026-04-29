@@ -52,15 +52,78 @@ interface InteractiveAsset {
   href: string;     // URL from app perspective
 }
 
-const processor = unified()
-  .use(remarkParse)
-  .use(remarkGfm)
-  .use(remarkRehype, { allowDangerousHtml: true })
-  .use(rehypeRaw)
-  .use(rehypeSlug)
-  .use(rehypeAutolinkHeadings, { behavior: "append" })
-  .use(rehypeHighlight, { detect: true, ignoreMissing: true })
-  .use(rehypeStringify);
+/* ── Directory name → section slug mapping ── */
+const DIR_TO_SECTION: Record<string, string> = Object.fromEntries(
+  SECTIONS.map((s) => [s.dir, s.slug])
+);
+
+/** Resolve an absolute content file path to its site slug, or null if outside content/ */
+function contentPathToSlug(absPath: string): string | null {
+  const rel = path.relative(CONTENT_DIR, absPath).replace(/\\/g, "/");
+  if (rel.startsWith("..")) return null;
+  const parts = rel.split("/");
+  const sectionDir = parts[0];
+  const section = DIR_TO_SECTION[sectionDir];
+  if (!section) return null;
+  const rest = parts.slice(1).join("/");
+  return toSlug(rest, section);
+}
+
+/** Walk hast tree and call fn on every element node */
+function walkTree(node: any, fn: (el: any) => void) {
+  if (node.type === "element") fn(node);
+  if (node.children) {
+    for (const child of node.children) walkTree(child, fn);
+  }
+}
+
+/**
+ * Rehype plugin: rewrite internal .md links to site slugs.
+ * - `../templates/ATDF-template.md` → `/agent/templates/ATDF-template`
+ * - Links outside content/ → GitHub blob URL
+ * - Preserves hash fragments
+ */
+function rehypeRewriteLinks(filePath: string) {
+  return () => (tree: any) => {
+    walkTree(tree, (el: any) => {
+      if (el.tagName !== "a") return;
+      const href = (el.properties as any)?.href;
+      if (!href || typeof href !== "string") return;
+      if (href.startsWith("http") || href.startsWith("#") || href.startsWith("mailto:")) return;
+
+      const [linkPath, hash] = href.split("#");
+      if (!linkPath) return;
+      const suffix = hash ? `#${hash}` : "";
+
+      const fileDir = path.dirname(filePath);
+      const resolved = path.resolve(fileDir, linkPath);
+
+      if (linkPath.endsWith(".md")) {
+        const slug = contentPathToSlug(resolved);
+        if (slug) {
+          (el.properties as any).href = `/${slug}${suffix}`;
+        } else {
+          // Outside content/ → link to GitHub source
+          const relToRepo = path.relative(REPO_ROOT, resolved).replace(/\\/g, "/");
+          (el.properties as any).href = `https://github.com/bob798/learn-ai-engineering/blob/main/${relToRepo}${suffix}`;
+        }
+      }
+    });
+  };
+}
+
+function createProcessor(filePath: string) {
+  return unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
+    .use(rehypeSlug)
+    .use(rehypeAutolinkHeadings, { behavior: "append" })
+    .use(rehypeHighlight, { detect: true, ignoreMissing: true })
+    .use(rehypeRewriteLinks(filePath))
+    .use(rehypeStringify);
+}
 
 function walk(dir: string, ext: string): string[] {
   const out: string[] = [];
@@ -108,8 +171,8 @@ function extractHeadings(md: string): Heading[] {
   return headings;
 }
 
-async function renderMarkdown(md: string): Promise<string> {
-  const file = await processor.process(md);
+async function renderMarkdown(md: string, filePath: string): Promise<string> {
+  const file = await createProcessor(filePath).process(md);
   return String(file);
 }
 
@@ -123,7 +186,7 @@ async function main() {
       const rel = path.relative(sectionDir, file).replace(/\\/g, "/");
       const raw = fs.readFileSync(file, "utf8");
       const { data, content } = matter(raw);
-      const html = await renderMarkdown(content);
+      const html = await renderMarkdown(content, file);
       const numPrefix = rel.match(/^(\d+)[-_]/)?.[1];
       const fallback = path.basename(rel, path.extname(rel));
       docs.push({

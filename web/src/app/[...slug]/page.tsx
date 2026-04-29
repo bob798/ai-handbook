@@ -49,10 +49,9 @@ export default async function DocPage({ params }: PageProps) {
           />
 
           {readme && (
-            <article
-              className="prose-doc mb-12 pb-10 border-b border-zinc-200 dark:border-zinc-800"
-              dangerouslySetInnerHTML={{ __html: readme.contentHtml }}
-            />
+            <div className="mb-12 pb-10 border-b border-zinc-200 dark:border-zinc-800">
+              <DocBody html={readme.contentHtml} />
+            </div>
           )}
 
           {groups.map((g) => (

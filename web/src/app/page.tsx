@@ -373,9 +373,9 @@ export default function HomePage() {
             >
               GitHub
             </a>
-            <a href="/guide/learning-path" className="hover:text-orange-600 transition">
+            <Link href="/guide/learning-path" className="hover:text-orange-600 transition">
               学习路线
-            </a>
+            </Link>
           </div>
         </div>
       </footer>
