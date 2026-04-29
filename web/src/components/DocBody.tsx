@@ -38,9 +38,10 @@ export function DocBody({ html }: { html: string }) {
       if (!href) return;
       // Skip external links, anchors, and non-http protocols
       if (href.startsWith("http") || href.startsWith("mailto:") || href.startsWith("#")) return;
-      // Internal path: navigate via router (basePath is auto-prepended)
+      // Strip basePath before router.push — router auto-prepends it
       e.preventDefault();
-      router.push(href);
+      const routerPath = basePath && href.startsWith(basePath) ? href.slice(basePath.length) || "/" : href;
+      router.push(routerPath);
     },
     [router]
   );
