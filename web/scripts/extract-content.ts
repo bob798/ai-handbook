@@ -57,6 +57,11 @@ const DIR_TO_SECTION: Record<string, string> = Object.fromEntries(
   SECTIONS.map((s) => [s.dir, s.slug])
 );
 
+const SECTION_SLUGS = new Set(SECTIONS.map((s) => s.slug));
+
+/** basePath — mirrors next.config.ts logic */
+const BASE_PATH = process.env.NODE_ENV === "production" ? "/learn-ai-engineering" : "";
+
 /** Resolve an absolute content file path to its site slug, or null if outside content/ */
 function contentPathToSlug(absPath: string): string | null {
   const rel = path.relative(CONTENT_DIR, absPath).replace(/\\/g, "/");
@@ -69,6 +74,28 @@ function contentPathToSlug(absPath: string): string | null {
   return toSlug(rest, section);
 }
 
+/**
+ * Resolve a relative .html link from a content file to a /viz/ path.
+ * e.g. from content/02-agent/methodology/5d-framework.md,
+ *   `./interactive.html` → check interactive/agent/interactive.html
+ *   `../deep-dives/memgpt-letta/memgpt-letta-guide.html` → check interactive/agent/memgpt-letta-guide.html
+ * Returns the viz URL or null if file not found.
+ */
+function resolveInteractiveHtml(filePath: string, linkPath: string): string | null {
+  // Determine which section this content file belongs to
+  const relToContent = path.relative(CONTENT_DIR, filePath).replace(/\\/g, "/");
+  const sectionDir = relToContent.split("/")[0];
+  const section = DIR_TO_SECTION[sectionDir];
+  if (!section) return null;
+
+  const fileName = path.basename(linkPath);
+  const vizPath = path.join(INTERACTIVE_DIR, section, fileName);
+  if (fs.existsSync(vizPath)) {
+    return `${BASE_PATH}/viz/${section}/${fileName}`;
+  }
+  return null;
+}
+
 /** Walk hast tree and call fn on every element node */
 function walkTree(node: any, fn: (el: any) => void) {
   if (node.type === "element") fn(node);
@@ -78,10 +105,11 @@ function walkTree(node: any, fn: (el: any) => void) {
 }
 
 /**
- * Rehype plugin: rewrite internal .md links to site slugs.
- * - `../templates/ATDF-template.md` → `/agent/templates/ATDF-template`
- * - Links outside content/ → GitHub blob URL
- * - Preserves hash fragments
+ * Rehype plugin: rewrite internal links for the static site.
+ * 1. Relative .md links → site slug paths with basePath
+ * 2. Relative .html links → /viz/ paths (interactive files)
+ * 3. Absolute internal paths (/agent/...) → prepend basePath
+ * 4. Links outside content/ → GitHub blob URL
  */
 function rehypeRewriteLinks(filePath: string) {
   return () => (tree: any) => {
@@ -95,17 +123,35 @@ function rehypeRewriteLinks(filePath: string) {
       if (!linkPath) return;
       const suffix = hash ? `#${hash}` : "";
 
+      // Case 1: Absolute internal path like /agent/methodology/5d-framework
+      if (linkPath.startsWith("/")) {
+        const firstSegment = linkPath.split("/")[1];
+        if (SECTION_SLUGS.has(firstSegment) || firstSegment === "viz") {
+          (el.properties as any).href = `${BASE_PATH}${linkPath}${suffix}`;
+        }
+        return;
+      }
+
       const fileDir = path.dirname(filePath);
       const resolved = path.resolve(fileDir, linkPath);
 
+      // Case 2: Relative .md link
       if (linkPath.endsWith(".md")) {
         const slug = contentPathToSlug(resolved);
         if (slug) {
-          (el.properties as any).href = `/${slug}${suffix}`;
+          (el.properties as any).href = `${BASE_PATH}/${slug}${suffix}`;
         } else {
-          // Outside content/ → link to GitHub source
           const relToRepo = path.relative(REPO_ROOT, resolved).replace(/\\/g, "/");
           (el.properties as any).href = `https://github.com/bob798/learn-ai-engineering/blob/main/${relToRepo}${suffix}`;
+        }
+        return;
+      }
+
+      // Case 3: Relative .html link → try to resolve to /viz/ path
+      if (linkPath.endsWith(".html")) {
+        const vizUrl = resolveInteractiveHtml(filePath, linkPath);
+        if (vizUrl) {
+          (el.properties as any).href = `${vizUrl}${suffix}`;
         }
       }
     });
